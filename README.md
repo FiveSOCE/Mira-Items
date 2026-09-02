@@ -4,13 +4,15 @@ Scarce, tracked special items for the Mira Minecraft plugin ecosystem. Targets *
 
 ## Download
 
-[**Download MiraItems v0.1.0**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.0/MiraItems-0.1.0.jar)
+[**Download MiraItems v0.1.2**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.2/MiraItems-0.1.2.jar)
 
-Current release: **v0.1.0**
+[View the latest GitHub release](https://github.com/FiveSOCE/Mira-Items/releases/latest)
+
+Current release: **v0.1.2**
 
 If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4.2+** so custom runes are rejected before they can touch MiraItems.
 
-## v0.1.0 items
+## Items
 
 ### Pyro Axe
 - Netherite Axe
@@ -20,6 +22,7 @@ If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4
 - Unlimited issuance
 - Damage chain: 1x, 2x, 4x, 8x and onward
 - Chain resets after more than 5 seconds or when switching targets
+- From hit 2 onward, chained hits play the Wither break-block and anvil-land sounds from the target location so nearby players can hear them
 
 ### Excalibur
 - Golden Sword
@@ -105,5 +108,5 @@ gradle clean test build
 Output:
 
 ```text
-build/libs/MiraItems-0.1.0.jar
+build/libs/MiraItems-0.1.2.jar
 ```
