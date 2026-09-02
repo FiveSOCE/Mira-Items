@@ -2,6 +2,14 @@
 
 Scarce, tracked special items for the Mira Minecraft plugin ecosystem. Targets **Paper 1.21.11** and **Java 21** and requires **MiraCore 0.1.0+**.
 
+## Download
+
+[**Download MiraItems v0.1.0**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.0/MiraItems-0.1.0.jar)
+
+Current release: **v0.1.0**
+
+If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4.2+** so custom runes are rejected before they can touch MiraItems.
+
 ## v0.1.0 items
 
 ### Pyro Axe
