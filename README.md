@@ -4,13 +4,13 @@ Scarce, tracked special items for the Mira Minecraft plugin ecosystem. Targets *
 
 ## Download
 
-[**Download MiraItems v0.1.2**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.2/MiraItems-0.1.2.jar)
+[**Download MiraItems v0.1.3**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.3/MiraItems-0.1.3.jar)
 
 [View the latest GitHub release](https://github.com/FiveSOCE/Mira-Items/releases/latest)
 
-Current release: **v0.1.2**
+Current release: **v0.1.3**
 
-If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4.2+** so custom runes are rejected before they can touch MiraItems.
+If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4.6+** so custom runes are rejected before they can touch MiraItems.
 
 ## Items
 
@@ -20,7 +20,7 @@ If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4
 - Lore: `&4Run For The Hills`, blank white line, owner and issue date
 - Sharpness V, Fire Aspect II
 - Unlimited issuance
-- Damage chain: 1x, 2x, 4x, 8x and onward
+- Damage chain: 1x, 2x, 4x, then remains capped at 4x for every later chained hit
 - Chain resets after more than 5 seconds or when switching targets
 - From hit 2 onward, chained hits play the Wither break-block and anvil-land sounds from the target location so nearby players can hear them
 
@@ -79,25 +79,7 @@ Limits are issuance limits. Losing a limited item does not automatically repleni
 
 Canonical ids are `pyro_axe`, `excalibur`, `lochaber_axe`, and `empower`. Friendly aliases such as `Pyro Axe` and `Lochaber Axe` are accepted by command parsing.
 
-`/mitem removelimit <item>` must be executed by a player holding a valid copy of that exact item. The held copy is consumed, its issuance record is removed, then the maximum is reduced by one.
-
-`/mitem reset <item>` clears the full issuance ledger for that item. Existing copies become invalid when next scanned. This is intended for server wipes after item storage has been deleted.
-
 Permission: `miraitems.admin` (OP by default).
-
-## MiraCore API
-
-MiraItems registers `MiraItemsApi` in MiraCore. Future MiraCrates, MiraKits and MiraShop integrations can issue tracked items through the API without dispatching commands.
-
-## Data
-
-Runtime scarcity state is stored at:
-
-```text
-plugins/MiraItems/state.yml
-```
-
-The signing secret is created automatically in `config.yml` on first boot.
 
 ## Building
 
@@ -108,5 +90,5 @@ gradle clean test build
 Output:
 
 ```text
-build/libs/MiraItems-0.1.2.jar
+build/libs/MiraItems-0.1.3.jar
 ```
