@@ -1,0 +1,44 @@
+name: Release v0.1.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-v0.1.0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested source
+        uses: actions/checkout@v4
+        with:
+          ref: 8a6e496fd6cc1d522d43365359b9943ea9eb9473
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+
+      - name: Test and build
+        run: gradle clean test build --stacktrace
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v0.1.0 \
+            build/libs/MiraItems-0.1.0.jar \
+            --target 8a6e496fd6cc1d522d43365359b9943ea9eb9473 \
+            --title "MiraItems v0.1.0" \
+            --notes "Initial MiraItems release for Paper 1.21.11 and Java 21. Adds four tracked special artifacts: Pyro Axe, Excalibur, Lochaber Axe and the Yearn-variant Empower goat horn. Includes issuance limits and owner/date ledgers, signed tamper-sensitive backing, enable/disable/check/reset/limit administration, Pyro doubling chains, Excalibur debuffs, Lochaber fatigue and fifth-hit pull, Empower buffs/cooldowns, MiraCore API integration, and secondary protection against MiraEnchantments backing."
