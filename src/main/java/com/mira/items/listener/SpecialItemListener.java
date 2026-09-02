@@ -8,7 +8,7 @@ import com.mira.items.store.ItemStateStore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -30,8 +30,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class SpecialItemListener implements Listener {
-    private static final String PYRO_CHAIN_SOUND = "entity.wither.break_block";
-
     private final MiraItemsPlugin plugin;
     private final MiraItemService items;
     private final ItemStateStore state;
@@ -154,7 +152,8 @@ public final class SpecialItemListener implements Listener {
         event.setDamage(event.getDamage() * multiplier);
 
         if (hit >= 2) {
-            attacker.playSound(attacker.getLocation(), PYRO_CHAIN_SOUND, 1.0F, 1.0F);
+            target.getWorld().playSound(target.getLocation(), Sound.ENTITY_WITHER_BREAK_BLOCK, 1.0F, 1.0F);
+            target.getWorld().playSound(target.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 1.0F);
         }
     }
 
