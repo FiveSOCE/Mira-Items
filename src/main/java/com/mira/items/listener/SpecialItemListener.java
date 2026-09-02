@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public final class SpecialItemListener implements Listener {
+    private static final String PYRO_CHAIN_SOUND = "entity.wither.break_block";
+
     private final MiraItemsPlugin plugin;
     private final MiraItemService items;
     private final ItemStateStore state;
@@ -150,6 +152,10 @@ public final class SpecialItemListener implements Listener {
         pyroChains.put(attacker.getUniqueId(), new PyroChain(target.getUniqueId(), now, hit));
         double multiplier = Math.pow(2.0D, hit - 1);
         event.setDamage(event.getDamage() * multiplier);
+
+        if (hit >= 2) {
+            attacker.playSound(attacker.getLocation(), PYRO_CHAIN_SOUND, 1.0F, 1.0F);
+        }
     }
 
     private void applyExcalibur(ItemStack weapon, Player attacker, LivingEntity target) {
