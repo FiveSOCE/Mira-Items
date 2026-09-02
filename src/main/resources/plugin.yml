@@ -1,5 +1,5 @@
 name: MiraItems
-version: 0.1.2
+version: 0.1.3
 main: com.mira.items.MiraItemsPlugin
 api-version: '1.21'
 authors: [FiveS]
