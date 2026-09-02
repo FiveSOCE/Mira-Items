@@ -33,5 +33,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MiraItems
-          path: build/libs/MiraItems-0.1.0.jar
+          path: build/libs/MiraItems-0.1.1.jar
           if-no-files-found: error
