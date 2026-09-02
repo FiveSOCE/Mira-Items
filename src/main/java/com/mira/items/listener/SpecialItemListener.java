@@ -148,7 +148,11 @@ public final class SpecialItemListener implements Listener {
         }
 
         pyroChains.put(attacker.getUniqueId(), new PyroChain(target.getUniqueId(), now, hit));
-        double multiplier = Math.pow(2.0D, hit - 1);
+
+        // Pyro ramps 1x -> 2x -> 4x and then stays at 4x for the rest of the chain.
+        // The chain can continue for sound/feedback purposes, but damage never exceeds 4x.
+        int exponent = Math.min(2, Math.max(0, hit - 1));
+        double multiplier = Math.pow(2.0D, exponent);
         event.setDamage(event.getDamage() * multiplier);
 
         if (hit >= 2) {
