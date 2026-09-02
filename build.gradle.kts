@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.mira"
-version = "0.1.2"
+version = "0.1.3"
 
 repositories {
     mavenCentral()
@@ -25,12 +25,8 @@ fun sha256(file: File): String {
 fun downloadVerified(url: String, target: File, expectedSha256: String) {
     if (target.exists() && sha256(target) == expectedSha256) return
     target.parentFile.mkdirs()
-    URI(url).toURL().openStream().use { input ->
-        target.outputStream().use { output -> input.copyTo(output) }
-    }
-    check(sha256(target) == expectedSha256) {
-        "Downloaded dependency failed SHA-256 verification: ${target.name}"
-    }
+    URI(url).toURL().openStream().use { input -> target.outputStream().use { output -> input.copyTo(output) } }
+    check(sha256(target) == expectedSha256) { "Downloaded dependency failed SHA-256 verification: ${target.name}" }
 }
 
 val downloadMiraDependencies by tasks.registering {
@@ -46,14 +42,11 @@ val downloadMiraDependencies by tasks.registering {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly(files(miraCoreJar))
-
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-}
+java { toolchain.languageVersion.set(JavaLanguageVersion.of(21)) }
 
 tasks.withType<JavaCompile>().configureEach {
     dependsOn(downloadMiraDependencies)
@@ -61,10 +54,6 @@ tasks.withType<JavaCompile>().configureEach {
     options.release.set(21)
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
+tasks.test { useJUnitPlatform() }
 
-tasks.jar {
-    archiveFileName.set("MiraItems-${project.version}.jar")
-}
+tasks.jar { archiveFileName.set("MiraItems-${project.version}.jar") }
