@@ -1,0 +1,20 @@
+name: MiraItems
+version: 0.1.0
+main: com.mira.items.MiraItemsPlugin
+api-version: '1.21'
+authors: [FiveS]
+description: Scarce tracked special items for the Mira Minecraft plugin ecosystem.
+depend: [MiraCore]
+softdepend: [MiraEnchantments]
+
+commands:
+  mitem:
+    description: MiraItems administration and diagnostics.
+    usage: /mitem <give|disable|enable|check|reset|addlimit|removelimit|status|test|help>
+    aliases: [miraitem, miraitems, mi]
+    permission: miraitems.admin
+
+permissions:
+  miraitems.admin:
+    description: Allows MiraItems administration commands.
+    default: op

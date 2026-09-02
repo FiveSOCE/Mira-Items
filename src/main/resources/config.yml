@@ -1,0 +1,16 @@
+date-format: "dd/MM/yyyy"
+
+security:
+  secret: ""
+
+mechanics:
+  pyro-reset-seconds: 5
+  excalibur-duration-ticks: 60
+  excalibur-cooldown-ticks: 600
+  lochaber-pull-strength: 1.35
+  lochaber-fatigue-duration-ticks: 60
+  empower-duration-ticks: 600
+  empower-cooldown-ticks: 6000
+
+integrity:
+  scan-interval-ticks: 40
