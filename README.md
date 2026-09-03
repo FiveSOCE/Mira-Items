@@ -1,94 +1,55 @@
 # MiraItems
 
-Scarce, tracked special items for the Mira Minecraft plugin ecosystem. Targets **Paper 1.21.11** and **Java 21** and requires **MiraCore 0.1.0+**.
+MiraItems is the scarce tracked-special-item system for the Mira Paper server suite. It issues uniquely signed custom weapons/items, enforces scarcity limits and integrity checks, and attaches custom combat or utility abilities to those issued copies.
 
 ## Download
 
 [**Download MiraItems v0.1.3**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.3/MiraItems-0.1.3.jar)
 
-[View the latest GitHub release](https://github.com/FiveSOCE/Mira-Items/releases/latest)
+## Requirements / Dependencies
 
-Current release: **v0.1.3**
+- Paper 1.21.11
+- Java 21
+- MiraCore 0.1.0 or newer
+- MiraEnchantments optional; MiraEnchantments v0.4.6+ is recommended so Runes are rejected before they can modify MiraItems
 
-If MiraEnchantments is installed on the same server, use **MiraEnchantments v0.4.6+** so custom runes are rejected before they can touch MiraItems.
+## How MiraItems Works
 
-## Items
+Every issued MiraItem receives hidden persistent identity including a unique issuance UUID, item ID, owner identity, issue date and signed backing metadata. Visible lore stays clean while the hidden data is used to validate the item. If a claimed MiraItem is materially altered or receives invalid backing, MiraItems strips its special-item identity and its ability stops functioning. Scarcity is based on issuance records, so destroying or losing a limited item does not automatically free another slot.
 
-### Pyro Axe
-- Netherite Axe
-- Name: `&4Pyro Axe`
-- Lore: `&4Run For The Hills`, blank white line, owner and issue date
-- Sharpness V, Fire Aspect II
-- Unlimited issuance
-- Damage chain: 1x, 2x, 4x, then remains capped at 4x for every later chained hit
-- Chain resets after more than 5 seconds or when switching targets
-- From hit 2 onward, chained hits play the Wither break-block and anvil-land sounds from the target location so nearby players can hear them
+Current special items include:
 
-### Excalibur
-- Golden Sword
-- Name: `Excalibur`
-- Lore: `&6Thy Might Of King Arthur`, blank white line, owner and issue date
-- Sharpness X, Infinity X
-- Maximum issuance: 2
-- Successful hit blinds and slows the target for 3 seconds
-- Ability cooldown: 30 seconds per issued Excalibur
+- **Pyro Axe**: Netherite Axe with Sharpness V/Fire Aspect II. Consecutive hits against the same target scale through 1x, 2x and 4x damage, staying capped at 4x until the chain resets. From hit two onward it plays the Wither block-break and anvil-land sounds from the target location for nearby players.
+- **Excalibur**: Golden Sword with Sharpness X/Infinity X, maximum issuance 2. Successful hits blind and slow the target for 3 seconds with a 30-second ability cooldown per issued sword.
+- **Lochaber Axe**: Diamond Axe with Sharpness X, maximum issuance 5. Applies Mining Fatigue I while held and pulls the target toward the attacker every fifth successful player hit.
+- **Empower!**: Yearn Goat Horn with Unbreaking X, maximum issuance 10. On use grants Resistance II, Speed II and Regeneration II for 30 seconds, with a 5-minute cooldown per issued horn.
 
-### Lochaber Axe
-- Diamond Axe
-- Name: `&aLochaber Axe`
-- Lore: `&aCome Closer!`, blank white line, owner and issue date
-- Sharpness X
-- Maximum issuance: 5
-- Applies Mining Fatigue I while held
-- Every 5th successful player hit pulls the target back toward the attacker
-
-### Empower!
-- Yearn Goat Horn specifically
-- Name: `&1Empower!`
-- Lore: `&9Empower Thy Ally!`, blank white line, owner and issue date
-- Unbreaking X
-- Maximum issuance: 10
-- On use: Resistance II, Speed II and Regeneration II for 30 seconds
-- Cooldown: 5 minutes per issued horn
-
-## Integrity and scarcity
-
-Every issued copy receives an internal MiraItems item id, unique issuance UUID, owner UUID/name, issue date and signed backing metadata. The visible lore remains exactly the requested four lines and does not expose the serial.
-
-Name, lore, material, owner/date backing and special variant are validated. If a claimed MiraItem is altered, its MiraItems backing is stripped and its special ability stops working. The issuance record remains in the scarcity ledger, so intentionally damaging a rare item does not mint a replacement slot.
-
-MiraEnchantments runes are not valid on MiraItems. MiraItems also rejects any claimed special item that somehow contains MiraEnchantments backing.
-
-Limits are issuance limits. Losing a limited item does not automatically replenish the supply. Use `addlimit`, `removelimit`, or the wipe-only `reset` command deliberately.
+MiraEnchantments Runes are not valid on MiraItems. Administrative limit commands deliberately manage issuance capacity rather than automatically replacing lost rare items.
 
 ## Commands
 
-```text
-/mitem give <item>
-/mitem give <player> <item>
-/mitem disable <item>
-/mitem enable <item>
-/mitem check <item>
-/mitem reset <item>
-/mitem addlimit <item>
-/mitem removelimit <item>
-/mitem status
-/mitem test
-/mitem help
-```
+All commands require `miraitems.admin`.
 
-Canonical ids are `pyro_axe`, `excalibur`, `lochaber_axe`, and `empower`. Friendly aliases such as `Pyro Axe` and `Lochaber Axe` are accepted by command parsing.
+| Command | Permission | What it does |
+| --- | --- | --- |
+| `/mitem give <item>` | `miraitems.admin` | Gives the executing player a newly issued copy of the selected MiraItem. |
+| `/mitem give <player> <item>` | `miraitems.admin` | Issues the selected MiraItem to another player. |
+| `/mitem disable <item>` | `miraitems.admin` | Disables issuance/active availability of the selected item definition. |
+| `/mitem enable <item>` | `miraitems.admin` | Re-enables the selected item definition. |
+| `/mitem check <item>` | `miraitems.admin` | Shows issuance/scarcity information for an item. |
+| `/mitem reset <item>` | `miraitems.admin` | Performs the deliberate wipe/reset flow for that item's issuance ledger. |
+| `/mitem addlimit <item>` | `miraitems.admin` | Increases the issuance limit for a limited MiraItem. |
+| `/mitem removelimit <item>` | `miraitems.admin` | Decreases/removes issuance capacity for a limited MiraItem. |
+| `/mitem status` | `miraitems.admin` | Shows MiraItems runtime/registry state. |
+| `/mitem test` | `miraitems.admin` | Runs MiraItems diagnostics/self-tests. |
+| `/mitem help` | `miraitems.admin` | Shows MiraItems command help. |
 
-Permission: `miraitems.admin` (OP by default).
+Aliases: `/miraitem`, `/miraitems`, `/mi`.
 
-## Building
+Canonical item IDs include `pyro_axe`, `excalibur`, `lochaber_axe` and `empower`; friendly names such as `Pyro Axe` are also accepted by command parsing.
 
-```bash
-gradle clean test build
-```
+## Permissions
 
-Output:
-
-```text
-build/libs/MiraItems-0.1.3.jar
-```
+| Permission | Default | What it does |
+| --- | --- | --- |
+| `miraitems.admin` | OP | Allows all MiraItems administration, issuance, limit and diagnostic commands. |
