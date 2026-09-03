@@ -6,6 +6,7 @@ import com.mira.core.api.ModuleHealth;
 import com.mira.items.api.MiraItemsApi;
 import com.mira.items.command.MiraItemCommand;
 import com.mira.items.listener.SpecialItemListener;
+import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.MiraItemService;
 import com.mira.items.store.ItemStateStore;
 import org.bukkit.Bukkit;
@@ -16,6 +17,7 @@ import org.bukkit.scheduler.BukkitTask;
 public final class MiraItemsPlugin extends JavaPlugin {
     private MiraCore core;
     private ItemStateStore state;
+    private CustomItemRegistryService registry;
     private MiraItemService items;
     private MiraItemsApi api;
     private BukkitTask maintenanceTask;
@@ -23,11 +25,11 @@ public final class MiraItemsPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-
         core = MiraCoreProvider.require();
         state = new ItemStateStore(this);
-        items = new MiraItemService(this, state);
-        api = new MiraItemsApiImpl(items, state);
+        registry = new CustomItemRegistryService(this);
+        items = new MiraItemService(this, state, registry);
+        api = new MiraItemsApiImpl(items, state, registry);
 
         core.modules().register(this, "MiraItems");
         core.services().register(MiraItemsApi.class, api);
@@ -44,11 +46,14 @@ public final class MiraItemsPlugin extends JavaPlugin {
         command.setExecutor(admin);
         command.setTabCompleter(admin);
 
-        maintenanceTask = Bukkit.getScheduler().runTaskTimer(this, listener::maintenance, 20L, 20L);
+        maintenanceTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            registry.cleanupExpired();
+            listener.maintenance();
+        }, 20L, 20L);
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
-                "Four tracked special items, integrity checks and scarcity ledger ready");
-        getLogger().info("MiraItems v" + getPluginMeta().getVersion() + " enabled with 4 special items.");
+                "Custom item registry, temporary event items, dynamic lore and cooldown displays ready");
+        getLogger().info("MiraItems v" + getPluginMeta().getVersion() + " enabled.");
     }
 
     @Override
