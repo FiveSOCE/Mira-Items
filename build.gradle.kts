@@ -1,20 +1,18 @@
 import java.net.URI
 import java.security.MessageDigest
 
-plugins {
-    java
-}
+plugins { java }
 
 group = "com.mira"
-version = "0.1.3"
+version = "0.1.4"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
 }
 
-val miraCoreVersion = "0.1.0"
-val miraCoreSha256 = "a96f1b4cd663666f7c82200b06ebf5d91751d2648a3d9bb3641e0e51bb730c9a"
+val miraCoreVersion = "0.2.0"
+val miraCoreSha256 = "66433a266a76088d2a2de90ac1beb1a5a183c26891ee8f394827b47830195b03"
 val miraCoreJar = layout.projectDirectory.file("libs/MiraCore-$miraCoreVersion.jar").asFile
 
 fun sha256(file: File): String {
@@ -22,20 +20,12 @@ fun sha256(file: File): String {
     return digest.digest(file.readBytes()).joinToString("") { byte -> "%02x".format(byte) }
 }
 
-fun downloadVerified(url: String, target: File, expectedSha256: String) {
-    if (target.exists() && sha256(target) == expectedSha256) return
-    target.parentFile.mkdirs()
-    URI(url).toURL().openStream().use { input -> target.outputStream().use { output -> input.copyTo(output) } }
-    check(sha256(target) == expectedSha256) { "Downloaded dependency failed SHA-256 verification: ${target.name}" }
-}
-
 val downloadMiraDependencies by tasks.registering {
     doLast {
-        downloadVerified(
-            "https://github.com/FiveSOCE/MIra-core/releases/download/v$miraCoreVersion/MiraCore-$miraCoreVersion.jar",
-            miraCoreJar,
-            miraCoreSha256
-        )
+        if (miraCoreJar.exists() && sha256(miraCoreJar) == miraCoreSha256) return@doLast
+        miraCoreJar.parentFile.mkdirs()
+        URI("https://github.com/FiveSOCE/MIra-core/releases/download/v$miraCoreVersion/MiraCore-$miraCoreVersion.jar").toURL().openStream().use { input -> miraCoreJar.outputStream().use { output -> input.copyTo(output) } }
+        check(sha256(miraCoreJar) == miraCoreSha256) { "Downloaded MiraCore JAR failed SHA-256 verification" }
     }
 }
 
