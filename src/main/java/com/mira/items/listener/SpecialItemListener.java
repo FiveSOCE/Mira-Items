@@ -51,41 +51,25 @@ public final class SpecialItemListener implements Listener {
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
         Optional<MiraItemDefinition> definitionOptional = items.identify(weapon);
         if (definitionOptional.isEmpty()) return;
-
         MiraItemDefinition definition = definitionOptional.get();
         if (!state.enabled(definition.id())) return;
-
-        if (definition.ability() == MiraAbility.PYRO && event.getEntity() instanceof LivingEntity target) {
-            applyPyro(event, attacker, target);
-            return;
-        }
-
-        if (definition.ability() == MiraAbility.EXCALIBUR && event.getEntity() instanceof LivingEntity target) {
-            applyExcalibur(weapon, attacker, target);
-            return;
-        }
-
-        if (definition.ability() == MiraAbility.LOCHABER && event.getEntity() instanceof Player target) {
-            applyLochaber(weapon, attacker, target);
-        }
+        if (definition.ability() == MiraAbility.PYRO && event.getEntity() instanceof LivingEntity target) { applyPyro(event, attacker, target); return; }
+        if (definition.ability() == MiraAbility.EXCALIBUR && event.getEntity() instanceof LivingEntity target) { applyExcalibur(weapon, attacker, target); return; }
+        if (definition.ability() == MiraAbility.LOCHABER && event.getEntity() instanceof Player target) applyLochaber(weapon, attacker, target);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
         Optional<MiraItemDefinition> definitionOptional = items.identify(item);
         if (definitionOptional.isEmpty()) return;
-
         MiraItemDefinition definition = definitionOptional.get();
         if (definition.ability() != MiraAbility.EMPOWER || !state.enabled(definition.id())) return;
-
         UUID issueId = items.issueId(item).orElse(null);
         if (issueId == null) return;
-
         long now = System.currentTimeMillis();
         long until = empowerCooldowns.getOrDefault(issueId, 0L);
         if (until > now) {
@@ -93,68 +77,56 @@ public final class SpecialItemListener implements Listener {
             player.sendActionBar(Component.text("Empower! ready in " + secondsRemaining(until, now) + "s", NamedTextColor.RED));
             return;
         }
-
         int duration = plugin.getConfig().getInt("mechanics.empower-duration-ticks", 600);
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 1, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, 1, false, true, true));
-
         long cooldownMillis = plugin.getConfig().getLong("mechanics.empower-cooldown-ticks", 6000L) * 50L;
         empowerCooldowns.put(issueId, now + cooldownMillis);
         player.sendActionBar(Component.text("Empower! activated for 30 seconds.", NamedTextColor.AQUA));
     }
 
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        pyroChains.remove(event.getPlayer().getUniqueId());
-    }
+    @EventHandler public void onQuit(PlayerQuitEvent event) { pyroChains.remove(event.getPlayer().getUniqueId()); }
 
     public void maintenance() {
         maintenanceRuns++;
         int scanEvery = Math.max(1, plugin.getConfig().getInt("integrity.scan-interval-ticks", 40) / 20);
-
+        long now = System.currentTimeMillis();
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (maintenanceRuns % scanEvery == 0) {
                 int invalidated = items.sanitizeInventory(player);
-                if (invalidated > 0) {
-                    player.sendMessage(Component.text(
-                            invalidated + " altered MiraItem" + (invalidated == 1 ? " has" : "s have")
-                                    + " lost special-item backing.",
-                            NamedTextColor.RED));
-                }
+                if (invalidated > 0) player.sendMessage(Component.text(invalidated + " altered MiraItem" + (invalidated == 1 ? " has" : "s have") + " lost special-item backing.", NamedTextColor.RED));
             }
-
             ItemStack held = player.getInventory().getItemInMainHand();
             Optional<MiraItemDefinition> heldDefinition = items.identify(held);
-            if (heldDefinition.isPresent()
-                    && heldDefinition.get().ability() == MiraAbility.LOCHABER
-                    && state.enabled(heldDefinition.get().id())) {
+            if (heldDefinition.isEmpty()) continue;
+            MiraItemDefinition definition = heldDefinition.get();
+            if (definition.ability() == MiraAbility.LOCHABER && state.enabled(definition.id())) {
                 int duration = plugin.getConfig().getInt("mechanics.lochaber-fatigue-duration-ticks", 60);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 0, false, false, true));
             }
+            UUID issueId = items.issueId(held).orElse(null);
+            if (issueId == null) continue;
+            long until = switch (definition.ability()) {
+                case EXCALIBUR -> excaliburCooldowns.getOrDefault(issueId, 0L);
+                case EMPOWER -> empowerCooldowns.getOrDefault(issueId, 0L);
+                default -> 0L;
+            };
+            if (until > now) player.sendActionBar(Component.text(definition.displayName().replaceAll("(?i)&[0-9A-FK-ORX]", "") + " cooldown: " + secondsRemaining(until, now) + "s", NamedTextColor.YELLOW));
         }
+        excaliburCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
+        empowerCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
     }
 
     private void applyPyro(EntityDamageByEntityEvent event, Player attacker, LivingEntity target) {
         long now = System.currentTimeMillis();
         long resetMillis = plugin.getConfig().getLong("mechanics.pyro-reset-seconds", 5L) * 1000L;
         PyroChain previous = pyroChains.get(attacker.getUniqueId());
-
         int hit = 1;
-        if (previous != null
-                && previous.targetId().equals(target.getUniqueId())
-                && now - previous.lastHitMillis() <= resetMillis) {
-            hit = previous.hitCount() + 1;
-        }
-
+        if (previous != null && previous.targetId().equals(target.getUniqueId()) && now - previous.lastHitMillis() <= resetMillis) hit = previous.hitCount() + 1;
         pyroChains.put(attacker.getUniqueId(), new PyroChain(target.getUniqueId(), now, hit));
-
-        // Pyro ramps 1x -> 2x -> 4x and then stays at 4x for the rest of the chain.
-        // The chain can continue for sound/feedback purposes, but damage never exceeds 4x.
         int exponent = Math.min(2, Math.max(0, hit - 1));
-        double multiplier = Math.pow(2.0D, exponent);
-        event.setDamage(event.getDamage() * multiplier);
-
+        event.setDamage(event.getDamage() * Math.pow(2.0D, exponent));
         if (hit >= 2) {
             target.getWorld().playSound(target.getLocation(), Sound.ENTITY_WITHER_BREAK_BLOCK, 1.0F, 1.0F);
             target.getWorld().playSound(target.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 1.0F);
@@ -164,15 +136,15 @@ public final class SpecialItemListener implements Listener {
     private void applyExcalibur(ItemStack weapon, Player attacker, LivingEntity target) {
         UUID issueId = items.issueId(weapon).orElse(null);
         if (issueId == null) return;
-
         long now = System.currentTimeMillis();
         long until = excaliburCooldowns.getOrDefault(issueId, 0L);
-        if (until > now) return;
-
+        if (until > now) {
+            attacker.sendActionBar(Component.text("Excalibur ready in " + secondsRemaining(until, now) + "s", NamedTextColor.RED));
+            return;
+        }
         int duration = plugin.getConfig().getInt("mechanics.excalibur-duration-ticks", 60);
         target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, duration, 0, false, true, true));
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 0, false, true, true));
-
         long cooldownMillis = plugin.getConfig().getLong("mechanics.excalibur-cooldown-ticks", 600L) * 50L;
         excaliburCooldowns.put(issueId, now + cooldownMillis);
         attacker.sendActionBar(Component.text("Excalibur struck with royal force.", NamedTextColor.GOLD));
@@ -181,13 +153,10 @@ public final class SpecialItemListener implements Listener {
     private void applyLochaber(ItemStack weapon, Player attacker, Player target) {
         UUID issueId = items.issueId(weapon).orElse(null);
         if (issueId == null) return;
-
         int hit = lochaberHits.merge(issueId, 1, Integer::sum);
         if (hit % 5 != 0) return;
-
         Vector pull = attacker.getLocation().toVector().subtract(target.getLocation().toVector());
         if (pull.lengthSquared() < 0.0001D) return;
-
         double strength = plugin.getConfig().getDouble("mechanics.lochaber-pull-strength", 1.35D);
         pull.normalize().multiply(strength);
         pull.setY(Math.max(0.25D, pull.getY() + 0.15D));
@@ -195,10 +164,6 @@ public final class SpecialItemListener implements Listener {
         attacker.sendActionBar(Component.text("Lochaber hooked " + target.getName() + "!", NamedTextColor.GREEN));
     }
 
-    private long secondsRemaining(long until, long now) {
-        return Math.max(1L, (long) Math.ceil((until - now) / 1000.0D));
-    }
-
-    private record PyroChain(UUID targetId, long lastHitMillis, int hitCount) {
-    }
+    private long secondsRemaining(long until, long now) { return Math.max(1L, (long) Math.ceil((until - now) / 1000.0D)); }
+    private record PyroChain(UUID targetId, long lastHitMillis, int hitCount) { }
 }
