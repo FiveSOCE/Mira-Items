@@ -42,7 +42,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
             core.modules().setHealth(this, ModuleHealth.UNHEALTHY, "MiraItems command missing from plugin.yml");
             throw new IllegalStateException("MiraItems command missing from plugin.yml");
         }
-        MiraItemCommand admin = new MiraItemCommand(this, items, state);
+        MiraItemCommand admin = new MiraItemCommand(this, core, items, state);
         command.setExecutor(admin);
         command.setTabCompleter(admin);
 
