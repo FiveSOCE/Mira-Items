@@ -23,7 +23,9 @@ public final class CustomItemRegistryService {
     private final MiraItemsPlugin plugin;
     private final File file;
     private final YamlConfiguration data;
+    private final Map<String, Long> starts = new LinkedHashMap<>();
     private final Map<String, Long> expiry = new LinkedHashMap<>();
+    private final Map<String, String> eventIds = new LinkedHashMap<>();
 
     public CustomItemRegistryService(MiraItemsPlugin plugin) {
         this.plugin = plugin;
@@ -37,10 +39,17 @@ public final class CustomItemRegistryService {
     }
 
     public synchronized boolean register(MiraItemRegistration registration, Instant expiresAt) {
+        return register(registration, "", null, expiresAt);
+    }
+
+    public synchronized boolean register(MiraItemRegistration registration, String eventId, Instant startsAt, Instant expiresAt) {
         MiraItemDefinition definition = toDefinition(registration);
         if (!MiraItemDefinitions.register(definition)) return false;
-        write(registration, expiresAt);
-        if (expiresAt != null) expiry.put(definition.id(), expiresAt.toEpochMilli());
+        write(registration, eventId, startsAt, expiresAt);
+        String id = definition.id();
+        if (startsAt != null) starts.put(id, startsAt.toEpochMilli());
+        if (expiresAt != null) expiry.put(id, expiresAt.toEpochMilli());
+        if (eventId != null && !eventId.isBlank()) eventIds.put(id, eventId.trim());
         save();
         return true;
     }
@@ -48,22 +57,38 @@ public final class CustomItemRegistryService {
     public synchronized boolean unregister(String id) {
         boolean removed = MiraItemDefinitions.unregister(id);
         data.set("items." + normalizeId(id), null);
+        starts.remove(normalizeId(id));
         expiry.remove(normalizeId(id));
+        eventIds.remove(normalizeId(id));
         save();
         return removed;
     }
 
     public boolean active(String id) {
-        Long end = expiry.get(normalizeId(id));
+        String key = normalizeId(id);
+        long now = System.currentTimeMillis();
+        Long start = starts.get(key);
+        if (start != null && now < start) return false;
+        Long end = expiry.get(key);
         if (end == null) return true;
-        if (System.currentTimeMillis() < end) return true;
+        if (now < end) return true;
         unregister(id);
         return false;
+    }
+
+    public Optional<Instant> startsAt(String id) {
+        Long value = starts.get(normalizeId(id));
+        return value == null ? Optional.empty() : Optional.of(Instant.ofEpochMilli(value));
     }
 
     public Optional<Instant> expiresAt(String id) {
         Long value = expiry.get(normalizeId(id));
         return value == null ? Optional.empty() : Optional.of(Instant.ofEpochMilli(value));
+    }
+
+    public Optional<String> eventId(String id) {
+        String value = eventIds.get(normalizeId(id));
+        return value == null || value.isBlank() ? Optional.empty() : Optional.of(value);
     }
 
     public void cleanupExpired() {
@@ -76,7 +101,9 @@ public final class CustomItemRegistryService {
         for (String id : section.getKeys(false)) {
             ConfigurationSection item = section.getConfigurationSection(id);
             if (item == null) continue;
+            long startsAt = item.getLong("starts-at", 0L);
             long expiresAt = item.getLong("expires-at", 0L);
+            String eventId = item.getString("event-id", "");
             if (expiresAt > 0L && System.currentTimeMillis() >= expiresAt) {
                 data.set("items." + id, null);
                 continue;
@@ -93,7 +120,9 @@ public final class CustomItemRegistryService {
             );
             try {
                 MiraItemDefinitions.register(toDefinition(registration));
+                if (startsAt > 0L) starts.put(id, startsAt);
                 if (expiresAt > 0L) expiry.put(id, expiresAt);
+                if (eventId != null && !eventId.isBlank()) eventIds.put(id, eventId);
             } catch (RuntimeException ex) {
                 plugin.getLogger().warning("Could not load custom MiraItem " + id + ": " + ex.getMessage());
             }
@@ -120,7 +149,7 @@ public final class CustomItemRegistryService {
                 registration.material(), Map.copyOf(enchants), registration.issueLimit(), abilityId);
     }
 
-    private void write(MiraItemRegistration registration, Instant expiresAt) {
+    private void write(MiraItemRegistration registration, String eventId, Instant startsAt, Instant expiresAt) {
         String base = "items." + normalizeId(registration.id()) + ".";
         data.set(base + "display-name", registration.displayName());
         data.set(base + "aliases", registration.aliases());
@@ -128,6 +157,8 @@ public final class CustomItemRegistryService {
         data.set(base + "material", registration.material().name());
         data.set(base + "issue-limit", registration.issueLimit());
         data.set(base + "ability", registration.ability() == null ? "NONE" : registration.ability());
+        data.set(base + "event-id", eventId == null || eventId.isBlank() ? null : eventId.trim());
+        data.set(base + "starts-at", startsAt == null ? null : startsAt.toEpochMilli());
         data.set(base + "expires-at", expiresAt == null ? null : expiresAt.toEpochMilli());
         if (registration.enchantments() != null) registration.enchantments().forEach((key, value) -> data.set(base + "enchantments." + key.toLowerCase(Locale.ROOT), value));
     }
