@@ -17,16 +17,16 @@ public final class MiraItemDefinitions {
     static {
         register(new MiraItemDefinition("pyro_axe", "&4Pyro Axe", List.of("pyro", "pyroaxe", "pyro_axe"),
                 List.of("&4Run For The Hills", "&f"), Material.NETHERITE_AXE,
-                Map.of(Enchantment.SHARPNESS, 5, Enchantment.FIRE_ASPECT, 2), -1, MiraAbility.PYRO));
+                Map.of(Enchantment.SHARPNESS, 5, Enchantment.FIRE_ASPECT, 2), -1, MiraAbility.PYRO.name()));
         register(new MiraItemDefinition("excalibur", "Excalibur", List.of("excalibur"),
                 List.of("&6Thy Might Of King Arthur", "&f"), Material.GOLDEN_SWORD,
-                Map.of(Enchantment.SHARPNESS, 10, Enchantment.INFINITY, 10), 2, MiraAbility.EXCALIBUR));
+                Map.of(Enchantment.SHARPNESS, 10, Enchantment.INFINITY, 10), 2, MiraAbility.EXCALIBUR.name()));
         register(new MiraItemDefinition("lochaber_axe", "&aLochaber Axe", List.of("lochaber", "lochaberaxe", "lochaber_axe"),
                 List.of("&aCome Closer!", "&f"), Material.DIAMOND_AXE,
-                Map.of(Enchantment.SHARPNESS, 10), 5, MiraAbility.LOCHABER));
+                Map.of(Enchantment.SHARPNESS, 10), 5, MiraAbility.LOCHABER.name()));
         register(new MiraItemDefinition("empower", "&1Empower!", List.of("empower", "empower!"),
                 List.of("&9Empower Thy Ally!", "&f"), Material.GOAT_HORN,
-                Map.of(Enchantment.UNBREAKING, 10), 10, MiraAbility.EMPOWER));
+                Map.of(Enchantment.UNBREAKING, 10), 10, MiraAbility.EMPOWER.name()));
     }
 
     private MiraItemDefinitions() { }
