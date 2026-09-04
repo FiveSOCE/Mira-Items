@@ -2,7 +2,6 @@ package com.mira.items.service;
 
 import com.mira.items.MiraItemsPlugin;
 import com.mira.items.api.MiraItemRegistration;
-import com.mira.items.model.MiraAbility;
 import com.mira.items.model.MiraItemDefinition;
 import com.mira.items.model.MiraItemDefinitions;
 import org.bukkit.NamespacedKey;
@@ -111,14 +110,14 @@ public final class CustomItemRegistryService {
                 if (enchantment != null) enchants.put(enchantment, level);
             });
         }
-        MiraAbility ability;
-        try { ability = MiraAbility.valueOf((registration.ability() == null ? "NONE" : registration.ability()).toUpperCase(Locale.ROOT)); }
-        catch (IllegalArgumentException ex) { ability = MiraAbility.NONE; }
+        String abilityId = registration.ability() == null || registration.ability().isBlank()
+                ? "NONE"
+                : registration.ability();
         return new MiraItemDefinition(
                 normalizeId(registration.id()), registration.displayName(),
                 registration.aliases() == null ? List.of() : List.copyOf(registration.aliases()),
                 registration.lore() == null ? List.of() : List.copyOf(registration.lore()),
-                registration.material(), Map.copyOf(enchants), registration.issueLimit(), ability);
+                registration.material(), Map.copyOf(enchants), registration.issueLimit(), abilityId);
     }
 
     private void write(MiraItemRegistration registration, Instant expiresAt) {
