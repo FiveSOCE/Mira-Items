@@ -146,9 +146,61 @@ public final class MiraItemService {
 
     public Optional<UUID> issueId(ItemStack item) {
         if (identify(item).isEmpty()) return Optional.empty();
+        return issueIdNonMutating(item);
+    }
+
+    public Optional<UUID> issueIdNonMutating(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return Optional.empty();
         String value = item.getItemMeta().getPersistentDataContainer().get(issueIdKey, PersistentDataType.STRING);
         if (value == null) return Optional.empty();
         try { return Optional.of(UUID.fromString(value)); } catch (IllegalArgumentException ignored) { return Optional.empty(); }
+    }
+
+    public Inspection inspect(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return Inspection.EMPTY;
+        ItemMeta meta = item.getItemMeta();
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        String itemId = pdc.get(itemIdKey, PersistentDataType.STRING);
+        if (itemId == null) return Inspection.EMPTY;
+        UUID issueId = issueIdNonMutating(item).orElse(null);
+        String ownerName = pdc.get(ownerNameKey, PersistentDataType.STRING);
+        String ownerUuid = pdc.get(ownerUuidKey, PersistentDataType.STRING);
+        String date = pdc.get(issuedDateKey, PersistentDataType.STRING);
+        MiraItemDefinition definition = MiraItemDefinitions.byId(itemId).orElse(null);
+        boolean activeDefinition = definition != null && registry.active(itemId);
+        boolean valid = identify(item, false).isPresent();
+        boolean backed = issueId != null && state.record(itemId, issueId).isPresent();
+        return new Inspection(true, valid, backed, activeDefinition, itemId, issueId,
+                ownerName == null ? "" : ownerName, ownerUuid == null ? "" : ownerUuid,
+                date == null ? "" : date, definition == null ? "UNKNOWN" : definition.abilityId(),
+                registry.expiresAt(itemId).orElse(null));
+    }
+
+    /**
+     * Refreshes canonical name/lore/signature for an already-valid issued item.
+     * Invalid or unbacked items are never repaired by this method.
+     */
+    public boolean migrateCanonical(ItemStack item) {
+        MiraItemDefinition definition = identify(item, false).orElse(null);
+        if (definition == null) return false;
+        UUID issueId = issueIdNonMutating(item).orElse(null);
+        if (issueId == null) return false;
+        ItemStateStore.IssuedRecord record = state.record(definition.id(), issueId).orElse(null);
+        if (record == null) return false;
+
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Text.component(resolve(definition.displayName(), definition, record.ownerName(), record.date())));
+        meta.lore(expectedLore(definition, record.ownerName(), record.date()));
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        pdc.set(itemIdKey, PersistentDataType.STRING, definition.id());
+        pdc.set(issueIdKey, PersistentDataType.STRING, issueId.toString());
+        pdc.set(ownerUuidKey, PersistentDataType.STRING, record.ownerId().toString());
+        pdc.set(ownerNameKey, PersistentDataType.STRING, record.ownerName());
+        pdc.set(issuedDateKey, PersistentDataType.STRING, record.date());
+        pdc.set(signatureKey, PersistentDataType.STRING,
+                signature(definition.id(), issueId, record.ownerId(), record.ownerName(), record.date()));
+        item.setItemMeta(meta);
+        return identify(item, false).isPresent();
     }
 
     public int sanitizeInventory(Player player) {
@@ -189,6 +241,12 @@ public final class MiraItemService {
         if (!configured.isEmpty()) return configured;
         String generated = UUID.randomUUID() + "-" + UUID.randomUUID();
         plugin.getConfig().set("security.secret", generated); plugin.saveConfig(); return generated;
+    }
+
+    public record Inspection(boolean claimed, boolean valid, boolean backed, boolean activeDefinition,
+                             String itemId, UUID issueId, String ownerName, String ownerUuid,
+                             String issuedDate, String abilityId, java.time.Instant eventExpiry) {
+        public static final Inspection EMPTY = new Inspection(false, false, false, false, "", null, "", "", "", "NONE", null);
     }
 
     private String signature(String itemId, UUID issueId, UUID ownerId, String ownerName, String date) {
