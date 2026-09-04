@@ -64,7 +64,7 @@ public final class MiraItemService {
             meta.displayName(Text.component(resolve(definition.displayName(), definition, record.ownerName(), record.date())));
             meta.lore(expectedLore(definition, record.ownerName(), record.date()));
             definition.enchants().forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
-            if (definition.ability() == MiraAbility.EMPOWER) {
+            if (definition.ability(MiraAbility.EMPOWER)) {
                 if (!(meta instanceof MusicInstrumentMeta instrumentMeta)) throw new IllegalStateException("GOAT_HORN did not expose MusicInstrumentMeta");
                 instrumentMeta.setInstrument(MusicInstrument.YEARN_GOAT_HORN);
             }
@@ -128,7 +128,7 @@ public final class MiraItemService {
             valid = meta.displayName() != null && meta.displayName().equals(Text.component(resolve(definition.displayName(), definition, ownerName, date)))
                     && meta.lore() != null && meta.lore().equals(expectedLore(definition, ownerName, date));
         }
-        if (valid && definition.ability() == MiraAbility.EMPOWER) {
+        if (valid && definition.ability(MiraAbility.EMPOWER)) {
             valid = meta instanceof MusicInstrumentMeta instrumentMeta && MusicInstrument.YEARN_GOAT_HORN.equals(instrumentMeta.getInstrument());
         }
         if (valid) valid = pdc.getKeys().stream().noneMatch(key -> key.getNamespace().equals("miraenchantments") && key.getKey().startsWith("enchant_"));
