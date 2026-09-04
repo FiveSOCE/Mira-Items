@@ -4,6 +4,8 @@ import com.mira.core.api.MiraCore;
 import com.mira.items.MiraItemsPlugin;
 import com.mira.items.model.MiraItemDefinition;
 import com.mira.items.model.MiraItemDefinitions;
+import com.mira.items.service.AbilityRegistryService;
+import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.MiraItemService;
 import com.mira.items.store.ItemStateStore;
 import org.bukkit.Bukkit;
@@ -23,19 +25,24 @@ import java.util.UUID;
 
 public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = List.of(
-            "give", "disable", "enable", "check", "reset", "addlimit", "removelimit", "status", "test", "help"
+            "give", "disable", "enable", "check", "inspect", "verify", "migrate", "reset", "addlimit", "removelimit", "status", "test", "help"
     );
 
     private final MiraItemsPlugin plugin;
     private final MiraCore core;
     private final MiraItemService items;
     private final ItemStateStore state;
+    private final CustomItemRegistryService registry;
+    private final AbilityRegistryService abilities;
 
-    public MiraItemCommand(MiraItemsPlugin plugin, MiraCore core, MiraItemService items, ItemStateStore state) {
+    public MiraItemCommand(MiraItemsPlugin plugin, MiraCore core, MiraItemService items, ItemStateStore state,
+                           CustomItemRegistryService registry, AbilityRegistryService abilities) {
         this.plugin = plugin;
         this.core = core;
         this.items = items;
         this.state = state;
+        this.registry = registry;
+        this.abilities = abilities;
     }
 
     @Override
@@ -47,6 +54,9 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
             case "disable" -> setEnabled(sender, args, false);
             case "enable" -> setEnabled(sender, args, true);
             case "check" -> check(sender, args);
+            case "inspect" -> inspect(sender);
+            case "verify" -> verify(sender);
+            case "migrate" -> migrate(sender);
             case "reset" -> reset(sender, args);
             case "addlimit" -> addLimit(sender, args);
             case "removelimit" -> removeLimit(sender, args);
@@ -104,6 +114,46 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void inspect(CommandSender sender) {
+        if (!(sender instanceof Player player)) { error(sender, "/mitem inspect must be run by a player holding an item."); return; }
+        ItemStack held = player.getInventory().getItemInMainHand();
+        var inspection = items.inspect(held);
+        if (!inspection.claimed()) { error(sender, "The held item is not a MiraItem."); return; }
+        send(sender, "&dMiraItem Inspection");
+        send(sender, "&7ID: &f" + inspection.itemId() + " &7| Ability: &f" + inspection.abilityId());
+        send(sender, "&7Issue: &f" + (inspection.issueId() == null ? "Missing" : inspection.issueId()));
+        send(sender, "&7Owner: &f" + inspection.ownerName() + " &8(" + inspection.ownerUuid() + ")");
+        send(sender, "&7Issued: &f" + inspection.issuedDate());
+        send(sender, "&7Valid signature/canonical metadata: " + (inspection.valid() ? "&aYES" : "&cNO"));
+        send(sender, "&7Issuance backing: " + (inspection.backed() ? "&aACTIVE" : "&cMISSING"));
+        send(sender, "&7Definition active: " + (inspection.activeDefinition() ? "&aYES" : "&cNO"));
+        registry.eventId(inspection.itemId()).ifPresent(id -> send(sender, "&7Event: &f" + id));
+        registry.startsAt(inspection.itemId()).ifPresent(time -> send(sender, "&7Starts: &f" + time));
+        if (inspection.eventExpiry() != null) send(sender, "&7Expires: &f" + inspection.eventExpiry());
+    }
+
+    private void verify(CommandSender sender) {
+        if (!(sender instanceof Player player)) { error(sender, "/mitem verify must be run by a player holding an item."); return; }
+        var inspection = items.inspect(player.getInventory().getItemInMainHand());
+        if (!inspection.claimed()) { error(sender, "The held item is not a MiraItem."); return; }
+        if (inspection.valid() && inspection.backed() && inspection.activeDefinition()) {
+            success(sender, "Held MiraItem is valid, backed and active.");
+        } else {
+            error(sender, "Held MiraItem failed verification. No item data was modified.");
+        }
+    }
+
+    private void migrate(CommandSender sender) {
+        if (!(sender instanceof Player player)) { error(sender, "/mitem migrate must be run by a player holding an item."); return; }
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (!items.migrateCanonical(held)) {
+            error(sender, "Migration refused. Only already-valid, issuance-backed MiraItems can be re-signed/canonicalized.");
+            return;
+        }
+        player.getInventory().setItemInMainHand(held);
+        success(sender, "Held MiraItem was safely refreshed to the current canonical metadata/signature.");
+    }
+
     private void reset(CommandSender sender, String[] args) {
         MiraItemDefinition definition = requiredDefinition(sender, args);
         if (definition == null) return;
@@ -141,8 +191,11 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         send(sender, "&dMiraItems v" + plugin.getPluginMeta().getVersion());
         for (MiraItemDefinition definition : MiraItemDefinitions.all()) {
             int limit = state.limit(definition.id());
-            send(sender, "&7- " + definition.id() + ": " + (state.enabled(definition.id()) ? "&aENABLED" : "&cDISABLED") + " &7| " + state.issuedCount(definition.id()) + "/" + (limit < 0 ? "Unlimited" : limit));
+            send(sender, "&7- " + definition.id() + ": " + (state.enabled(definition.id()) ? "&aENABLED" : "&cDISABLED")
+                    + " &7| " + state.issuedCount(definition.id()) + "/" + (limit < 0 ? "Unlimited" : limit)
+                    + " &7| ability &f" + definition.abilityId());
         }
+        send(sender, "&7External ability handlers: &f" + (abilities.ids().isEmpty() ? "None" : abilities.ids()));
     }
 
     private void test(CommandSender sender) {
@@ -177,6 +230,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         send(sender, "&7/mitem give <player> <item>");
         send(sender, "&7/mitem disable <item> | /mitem enable <item>");
         send(sender, "&7/mitem check <item> | /mitem reset <item>");
+        send(sender, "&7/mitem inspect | /mitem verify | /mitem migrate");
         send(sender, "&7/mitem addlimit <item> | /mitem removelimit <item>");
         send(sender, "&7/mitem status | /mitem test");
     }
