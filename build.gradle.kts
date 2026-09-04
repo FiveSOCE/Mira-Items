@@ -4,11 +4,12 @@ import java.security.MessageDigest
 plugins { java }
 
 group = "com.mira"
-version = "0.1.4"
+version = "0.1.5"
 
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
 }
 
 val miraCoreVersion = "0.2.0"
@@ -32,6 +33,7 @@ val downloadMiraDependencies by tasks.registering {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly(files(miraCoreJar))
+    compileOnly("me.clip:placeholderapi:2.11.6")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
