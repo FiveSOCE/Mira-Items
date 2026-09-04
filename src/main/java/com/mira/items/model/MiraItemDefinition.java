@@ -14,9 +14,22 @@ public record MiraItemDefinition(
         Material material,
         Map<Enchantment, Integer> enchants,
         int defaultLimit,
-        MiraAbility ability
+        String abilityId
 ) {
+    public MiraItemDefinition {
+        abilityId = normalizeAbility(abilityId);
+    }
+
     public boolean unlimited() {
         return defaultLimit < 0;
+    }
+
+    public boolean ability(MiraAbility ability) {
+        return ability != null && abilityId.equalsIgnoreCase(ability.name());
+    }
+
+    private static String normalizeAbility(String value) {
+        if (value == null || value.isBlank()) return "NONE";
+        return value.trim().toUpperCase(java.util.Locale.ROOT).replaceAll("[^A-Z0-9_]+", "_");
     }
 }
