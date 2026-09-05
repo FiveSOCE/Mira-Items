@@ -37,6 +37,8 @@ public final class MiraItemService {
     private final NamespacedKey ownerNameKey;
     private final NamespacedKey issuedDateKey;
     private final NamespacedKey signatureKey;
+    private final NamespacedKey renameValueKey;
+    private final NamespacedKey renameSignatureKey;
     private final String secret;
 
     public MiraItemService(MiraItemsPlugin plugin, ItemStateStore state, CustomItemRegistryService registry) {
@@ -49,6 +51,8 @@ public final class MiraItemService {
         this.ownerNameKey = new NamespacedKey(plugin, "owner_name");
         this.issuedDateKey = new NamespacedKey(plugin, "issued_date");
         this.signatureKey = new NamespacedKey(plugin, "signature");
+        this.renameValueKey = new NamespacedKey(plugin, "custom_name");
+        this.renameSignatureKey = new NamespacedKey(plugin, "custom_name_signature");
         this.secret = ensureSecret();
     }
 
@@ -125,7 +129,18 @@ public final class MiraItemService {
                     && storedSignature.equals(signature(itemId, issueId, ownerId, ownerName, date));
         }
         if (valid) {
-            valid = meta.displayName() != null && meta.displayName().equals(Text.component(resolve(definition.displayName(), definition, ownerName, date)))
+            String customName = pdc.get(renameValueKey, PersistentDataType.STRING);
+            String customSignature = pdc.get(renameSignatureKey, PersistentDataType.STRING);
+            Component expectedName;
+            if (customName != null) {
+                valid = customSignature != null && customSignature.equals(renameSignature(
+                        itemId, issueId, ownerId, customName));
+                expectedName = Text.component(customName);
+            } else {
+                valid = customSignature == null;
+                expectedName = Text.component(resolve(definition.displayName(), definition, ownerName, date));
+            }
+            valid = valid && meta.displayName() != null && meta.displayName().equals(expectedName)
                     && meta.lore() != null && meta.lore().equals(expectedLore(definition, ownerName, date));
         }
         if (valid && definition.ability(MiraAbility.EMPOWER)) {
@@ -189,9 +204,19 @@ public final class MiraItemService {
         if (record == null) return false;
 
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(Text.component(resolve(definition.displayName(), definition, record.ownerName(), record.date())));
-        meta.lore(expectedLore(definition, record.ownerName(), record.date()));
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        String customName = pdc.get(renameValueKey, PersistentDataType.STRING);
+        String customNameSignature = pdc.get(renameSignatureKey, PersistentDataType.STRING);
+        boolean signedCustomName = customName != null && customNameSignature != null
+                && customNameSignature.equals(renameSignature(definition.id(), issueId, record.ownerId(), customName));
+        meta.displayName(signedCustomName
+                ? Text.component(customName)
+                : Text.component(resolve(definition.displayName(), definition, record.ownerName(), record.date())));
+        if (!signedCustomName) {
+            pdc.remove(renameValueKey);
+            pdc.remove(renameSignatureKey);
+        }
+        meta.lore(expectedLore(definition, record.ownerName(), record.date()));
         pdc.set(itemIdKey, PersistentDataType.STRING, definition.id());
         pdc.set(issueIdKey, PersistentDataType.STRING, issueId.toString());
         pdc.set(ownerUuidKey, PersistentDataType.STRING, record.ownerId().toString());
@@ -201,6 +226,36 @@ public final class MiraItemService {
                 signature(definition.id(), issueId, record.ownerId(), record.ownerName(), record.date()));
         item.setItemMeta(meta);
         return identify(item, false).isPresent();
+    }
+
+    /**
+     * Changes only the display name. Issued MiraItems receive a second signed rename overlay so
+     * their original issuance identity remains verifiable; unrelated item metadata/PDC is untouched.
+     */
+    public boolean renamePreservingIdentity(ItemStack item, String legacyName) {
+        if (item == null || item.getType().isAir() || legacyName == null || legacyName.isBlank()) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+
+        if (claimed(item)) {
+            MiraItemDefinition definition = identify(item, false).orElse(null);
+            UUID issueId = issueIdNonMutating(item).orElse(null);
+            if (definition == null || issueId == null) return false;
+            ItemStateStore.IssuedRecord record = state.record(definition.id(), issueId).orElse(null);
+            if (record == null) return false;
+
+            PersistentDataContainer pdc = meta.getPersistentDataContainer();
+            pdc.set(renameValueKey, PersistentDataType.STRING, legacyName);
+            pdc.set(renameSignatureKey, PersistentDataType.STRING,
+                    renameSignature(definition.id(), issueId, record.ownerId(), legacyName));
+            meta.displayName(Text.component(legacyName));
+            item.setItemMeta(meta);
+            return identify(item, false).isPresent();
+        }
+
+        meta.displayName(Text.component(legacyName));
+        item.setItemMeta(meta);
+        return true;
     }
 
     public int sanitizeInventory(Player player) {
@@ -214,6 +269,7 @@ public final class MiraItemService {
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.remove(itemIdKey); pdc.remove(issueIdKey); pdc.remove(ownerUuidKey); pdc.remove(ownerNameKey); pdc.remove(issuedDateKey); pdc.remove(signatureKey);
+        pdc.remove(renameValueKey); pdc.remove(renameSignatureKey);
         item.setItemMeta(meta);
     }
 
@@ -247,6 +303,16 @@ public final class MiraItemService {
                              String itemId, UUID issueId, String ownerName, String ownerUuid,
                              String issuedDate, String abilityId, java.time.Instant eventExpiry) {
         public static final Inspection EMPTY = new Inspection(false, false, false, false, "", null, "", "", "", "NONE", null);
+    }
+
+    private String renameSignature(String itemId, UUID issueId, UUID ownerId, String customName) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String payload = "rename|" + itemId + "|" + issueId + "|" + ownerId + "|" + customName + "|" + secret;
+            return HexFormat.of().formatHex(digest.digest(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception error) {
+            throw new IllegalStateException("Unable to sign MiraItem rename", error);
+        }
     }
 
     private String signature(String itemId, UUID issueId, UUID ownerId, String ownerName, String date) {
