@@ -9,6 +9,7 @@ import com.mira.items.listener.SpecialItemListener;
 import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.MiraItemService;
+import com.mira.items.service.UtilityTokenService;
 import com.mira.items.store.ItemStateStore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -22,6 +23,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
     private AbilityRegistryService abilities;
     private MiraItemService items;
     private MiraItemsApi api;
+    private UtilityTokenService utilityTokens;
     private BukkitTask maintenanceTask;
 
     @Override
@@ -32,6 +34,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
         registry = new CustomItemRegistryService(this);
         abilities = new AbilityRegistryService();
         items = new MiraItemService(this, state, registry);
+        utilityTokens = new UtilityTokenService(this, core, items);
         api = new MiraItemsApiImpl(items, state, registry, abilities);
 
         core.modules().register(this, "MiraItems");
@@ -39,13 +42,14 @@ public final class MiraItemsPlugin extends JavaPlugin {
 
         SpecialItemListener listener = new SpecialItemListener(this, core, items, state, abilities);
         getServer().getPluginManager().registerEvents(listener, this);
+        getServer().getPluginManager().registerEvents(utilityTokens, this);
 
         PluginCommand command = getCommand("mitem");
         if (command == null) {
             core.modules().setHealth(this, ModuleHealth.UNHEALTHY, "MiraItems command missing from plugin.yml");
             throw new IllegalStateException("MiraItems command missing from plugin.yml");
         }
-        MiraItemCommand admin = new MiraItemCommand(this, core, items, state, registry, abilities);
+        MiraItemCommand admin = new MiraItemCommand(this, core, items, state, registry, abilities, utilityTokens);
         command.setExecutor(admin);
         command.setTabCompleter(admin);
 
@@ -67,6 +71,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
     public MiraItemService items() { return items; }
     public CustomItemRegistryService registry() { return registry; }
     public AbilityRegistryService abilities() { return abilities; }
+    public UtilityTokenService utilityTokens() { return utilityTokens; }
 
     @Override
     public void onDisable() {
