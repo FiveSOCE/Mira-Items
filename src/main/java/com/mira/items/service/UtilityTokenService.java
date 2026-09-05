@@ -170,7 +170,7 @@ public final class UtilityTokenService implements Listener {
             return;
         }
 
-        String safe = sanitizeName(raw);
+        String safe = sanitizeName(player, raw);
         if (safe == null) return;
 
         if (!items.renamePreservingIdentity(target, safe)) {
@@ -186,7 +186,7 @@ public final class UtilityTokenService implements Listener {
         core.messages().send(player, "&aYour offhand item was renamed.");
     }
 
-    private String sanitizeName(String input) {
+    private String sanitizeName(Player player, String input) {
         String safe = input == null ? "" : input.trim().replace('§', '&');
         if (!plugin.getConfig().getBoolean("utility-tokens.rename.allow-colors", true)) {
             safe = safe.replaceAll("(?i)&[0-9A-FK-OR]", "");
@@ -197,21 +197,20 @@ public final class UtilityTokenService implements Listener {
         String plain = safe.replaceAll("(?i)&[0-9A-FK-OR]", "").trim();
         int max = Math.max(1, plugin.getConfig().getInt("utility-tokens.rename.max-length", 32));
         if (plain.isBlank() || plain.length() > max) {
-            return failName("Name must be between 1 and " + max + " visible characters.");
+            return failName(player, "Name must be between 1 and " + max + " visible characters.");
         }
 
         String lower = plain.toLowerCase(Locale.ROOT);
         for (String blocked : plugin.getConfig().getStringList("utility-tokens.rename.blocked-terms")) {
             if (blocked != null && !blocked.isBlank() && lower.contains(blocked.toLowerCase(Locale.ROOT))) {
-                return failName("That item name contains blocked text.");
+                return failName(player, "That item name contains blocked text.");
             }
         }
         return safe;
     }
 
-    private String failName(String message) {
-        // The chat handler already consumed the pending prompt, but never the physical token.
-        // The player can right-click the token again to retry.
+    private String failName(Player player, String message) {
+        core.messages().send(player, "&c" + message + " &7Your token was not consumed.");
         return null;
     }
 
