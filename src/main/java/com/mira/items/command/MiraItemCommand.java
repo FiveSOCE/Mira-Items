@@ -7,6 +7,7 @@ import com.mira.items.model.MiraItemDefinitions;
 import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.MiraItemService;
+import com.mira.items.service.UtilityTokenService;
 import com.mira.items.store.ItemStateStore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -25,7 +26,7 @@ import java.util.UUID;
 
 public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = List.of(
-            "give", "disable", "enable", "check", "inspect", "verify", "migrate", "reset", "addlimit", "removelimit", "status", "test", "help"
+            "give", "token", "disable", "enable", "check", "inspect", "verify", "migrate", "reset", "addlimit", "removelimit", "status", "test", "help"
     );
 
     private final MiraItemsPlugin plugin;
@@ -34,15 +35,18 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     private final ItemStateStore state;
     private final CustomItemRegistryService registry;
     private final AbilityRegistryService abilities;
+    private final UtilityTokenService utilityTokens;
 
     public MiraItemCommand(MiraItemsPlugin plugin, MiraCore core, MiraItemService items, ItemStateStore state,
-                           CustomItemRegistryService registry, AbilityRegistryService abilities) {
+                           CustomItemRegistryService registry, AbilityRegistryService abilities,
+                           UtilityTokenService utilityTokens) {
         this.plugin = plugin;
         this.core = core;
         this.items = items;
         this.state = state;
         this.registry = registry;
         this.abilities = abilities;
+        this.utilityTokens = utilityTokens;
     }
 
     @Override
@@ -51,6 +55,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "give" -> give(sender, args);
+            case "token" -> token(sender, args);
             case "disable" -> setEnabled(sender, args, false);
             case "enable" -> setEnabled(sender, args, true);
             case "check" -> check(sender, args);
@@ -65,6 +70,45 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
             default -> help(sender);
         }
         return true;
+    }
+
+    private void token(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            error(sender, "Usage: /mitem token <repair|rename> <player> [amount]");
+            return;
+        }
+        UtilityTokenService.TokenType type;
+        try {
+            type = UtilityTokenService.TokenType.valueOf(args[1].toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            error(sender, "Token type must be repair or rename.");
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            error(sender, "Player '" + args[2] + "' is not online.");
+            return;
+        }
+        int amount = 1;
+        if (args.length >= 4) {
+            try { amount = Integer.parseInt(args[3]); }
+            catch (NumberFormatException exception) {
+                error(sender, "Amount must be a positive number.");
+                return;
+            }
+        }
+        if (amount <= 0 || amount > 2304) {
+            error(sender, "Amount must be between 1 and 2304.");
+            return;
+        }
+        utilityTokens.give(target, type, amount);
+        success(sender, "Gave " + amount + " " + type.name().toLowerCase(Locale.ROOT) + " token"
+                + (amount == 1 ? "" : "s") + " to " + target.getName() + ".");
+        core.audit().record("MiraItems", "UTILITY_TOKEN_GRANTED",
+                sender instanceof Player player ? player.getUniqueId() : null, sender.getName(),
+                target.getUniqueId().toString(), "Utility token granted",
+                java.util.Map.of("type", type.name(), "amount", Integer.toString(amount),
+                        "targetName", target.getName()));
     }
 
     private void give(CommandSender sender, String[] args) {
@@ -228,6 +272,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         send(sender, "&dMiraItems commands");
         send(sender, "&7/mitem give <item>");
         send(sender, "&7/mitem give <player> <item>");
+        send(sender, "&7/mitem token <repair|rename> <player> [amount]");
         send(sender, "&7/mitem disable <item> | /mitem enable <item>");
         send(sender, "&7/mitem check <item> | /mitem reset <item>");
         send(sender, "&7/mitem inspect | /mitem verify | /mitem migrate");
@@ -243,6 +288,11 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) return matching(SUBCOMMANDS, args[0]);
         String sub = args[0].toLowerCase(Locale.ROOT);
+        if (args.length == 2 && sub.equals("token")) return matching(List.of("repair", "rename"), args[1]);
+        if (args.length == 3 && sub.equals("token")) {
+            return matching(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[2]);
+        }
+        if (args.length == 4 && sub.equals("token")) return matching(List.of("1", "5", "10", "32", "64"), args[3]);
         if (args.length == 2 && sub.equals("give")) {
             List<String> values = new ArrayList<>(itemIds());
             Bukkit.getOnlinePlayers().forEach(player -> values.add(player.getName()));
