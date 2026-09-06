@@ -35,19 +35,19 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: MiraItems-0.1.5
-          path: build/libs/MiraItems-0.1.5.jar
+          name: MiraItems-0.1.6
+          path: build/libs/MiraItems-0.1.6.jar
           if-no-files-found: error
 
-      - name: Publish v0.1.5 release if missing
+      - name: Publish v0.1.6 release if missing
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.1.5 >/dev/null 2>&1; then
-            gh release create v0.1.5 \
-              build/libs/MiraItems-0.1.5.jar \
+          if ! gh release view v0.1.6 >/dev/null 2>&1; then
+            gh release create v0.1.6 \
+              build/libs/MiraItems-0.1.6.jar \
               --target "${{ github.sha }}" \
-              --title "MiraItems v0.1.5" \
-              --notes "Adds an extensible runtime ability registry, MiraCore-backed item cooldowns, event IDs/start-end windows, non-destructive inspect/verify tools, safe canonical migration/re-signing and PlaceholderAPI held-item cooldown/event data."
+              --title "MiraItems v0.1.6" \
+              --notes "Ships the signed custom rename overlay, repair and rename utility tokens, validation hardening, utility-token service registration, and admin token issuance commands that were previously source-only."
           fi
