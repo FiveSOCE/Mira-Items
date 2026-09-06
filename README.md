@@ -4,7 +4,9 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.5**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.5/MiraItems-0.1.5.jar)
+[**Download MiraItems v0.1.6**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.6/MiraItems-0.1.6.jar)
+
+Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
 ## Requirements / Dependencies
 
@@ -27,7 +29,7 @@ Current special items include:
 
 MiraEnchantments Runes are not valid on MiraItems. Administrative limit commands deliberately manage issuance capacity rather than automatically replacing lost rare items.
 
-v0.1.5 makes the custom-item layer extensible rather than enum-locked. External Mira modules can register named ability handlers through the MiraItems API, while the built-in Pyro, Excalibur, Lochaber and Empower mechanics remain first-party handlers. Excalibur and Empower cooldowns use MiraCore's shared cooldown service with the issued-item UUID as the cooldown subject, preserving cooldowns even if an item changes hands.
+v0.1.6 makes the custom-item layer extensible rather than enum-locked. External Mira modules can register named ability handlers through the MiraItems API, while the built-in Pyro, Excalibur, Lochaber and Empower mechanics remain first-party handlers. Excalibur and Empower cooldowns use MiraCore's shared cooldown service with the issued-item UUID as the cooldown subject, preserving cooldowns even if an item changes hands.
 
 Event item registrations can carry an event ID plus absolute start/end timestamps. Definitions remain persisted and inactive before their start window; expired event definitions are removed from active use. Admin inspection/verification is deliberately non-destructive, and `/mitem migrate` only refreshes canonical metadata/signatures for an item that is already valid and backed by a real issuance record.
 
@@ -38,6 +40,7 @@ All commands require `miraitems.admin`.
 | Command | Permission | What it does |
 | --- | --- | --- |
 | `/mitem give <item>` | `miraitems.admin` | Gives the executing player a newly issued copy of the selected MiraItem. |
+| `/mitem token <repair|rename> <player> [amount]` | `miraitems.admin` | Gives signed utility tokens for repairing or renaming supported MiraItems. |
 | `/mitem give <player> <item>` | `miraitems.admin` | Issues the selected MiraItem to another player. |
 | `/mitem disable <item>` | `miraitems.admin` | Disables issuance/active availability of the selected item definition. |
 | `/mitem enable <item>` | `miraitems.admin` | Re-enables the selected item definition. |
