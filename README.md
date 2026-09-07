@@ -1,10 +1,29 @@
 # MiraItems
 
+## v0.1.7 dynamic vouchers
+
+MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
+
+Generated voucher families include:
+
+- **LuckPerms rank vouchers** for non-staff groups. Staff-style names such as owner/admin/moderator/helper/staff/developer/manager/builder/support are excluded through the configurable deny list.
+- Rank redemption uses LuckPerms group weights as the progression ladder. A player cannot redeem a rank they already have or one at/below their current non-staff weighted rank.
+- **Jelly Legs voucher** granting the configured permission for `/jellylegs`.
+- **Home Upgrade I/II/III**. The vouchers are sequential and create three EssentialsX multihome tiers above the normal home baseline.
+- **One-use kit vouchers** generated from every kit discovered through MiraKits/Essentials.
+- **Permanent Fly voucher** granting the command's live Bukkit permission when available, with `essentials.fly` as the configured fallback.
+- **Tag vouchers** generated from enabled, non-default MiraTags entries and their configured tag permissions.
+- **Airdrop Call voucher**, rejected while an airdrop is inbound/active.
+- **Pinata Call voucher**, rejected while a Pinata is active/counting down.
+
+The generated vouchers are ordinary registered MiraItem definitions, so administrators issue them through the same `/mitem give` flow and tab completion used by other MiraItems.
+
+
 MiraItems is the scarce tracked-special-item system for the Mira Paper server suite. It issues uniquely signed custom weapons/items, enforces scarcity limits and integrity checks, and attaches custom combat or utility abilities to those issued copies.
 
 ## Download
 
-[**Download MiraItems v0.1.6**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.6/MiraItems-0.1.6.jar)
+[**Download MiraItems v0.1.7**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.7/MiraItems-0.1.7.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
@@ -29,7 +48,7 @@ Current special items include:
 
 MiraEnchantments Runes are not valid on MiraItems. Administrative limit commands deliberately manage issuance capacity rather than automatically replacing lost rare items.
 
-v0.1.6 makes the custom-item layer extensible rather than enum-locked. External Mira modules can register named ability handlers through the MiraItems API, while the built-in Pyro, Excalibur, Lochaber and Empower mechanics remain first-party handlers. Excalibur and Empower cooldowns use MiraCore's shared cooldown service with the issued-item UUID as the cooldown subject, preserving cooldowns even if an item changes hands.
+v0.1.7 makes the custom-item layer extensible rather than enum-locked. External Mira modules can register named ability handlers through the MiraItems API, while the built-in Pyro, Excalibur, Lochaber and Empower mechanics remain first-party handlers. Excalibur and Empower cooldowns use MiraCore's shared cooldown service with the issued-item UUID as the cooldown subject, preserving cooldowns even if an item changes hands.
 
 Event item registrations can carry an event ID plus absolute start/end timestamps. Definitions remain persisted and inactive before their start window; expired event definitions are removed from active use. Admin inspection/verification is deliberately non-destructive, and `/mitem migrate` only refreshes canonical metadata/signatures for an item that is already valid and backed by a real issuance record.
 
