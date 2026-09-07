@@ -14,3 +14,28 @@ mechanics:
 
 integrity:
   scan-interval-ticks: 40
+
+
+vouchers:
+  ranks:
+    # Groups containing any of these names never receive rank vouchers.
+    excluded-names:
+      - owner
+      - admin
+      - administrator
+      - moderator
+      - mod
+      - helper
+      - staff
+      - developer
+      - dev
+      - manager
+      - builder
+      - support
+      - trialmod
+      - jrmod
+      - srmod
+  permissions:
+    # Used only if the matching command does not expose a Bukkit permission.
+    jellylegs: "jellylegs.use"
+    fly: "essentials.fly"
