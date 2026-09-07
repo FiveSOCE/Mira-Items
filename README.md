@@ -48,7 +48,7 @@ Current special items include:
 
 MiraEnchantments Runes are not valid on MiraItems. Administrative limit commands deliberately manage issuance capacity rather than automatically replacing lost rare items.
 
-v0.1.7 makes the custom-item layer extensible rather than enum-locked. External Mira modules can register named ability handlers through the MiraItems API, while the built-in Pyro, Excalibur, Lochaber and Empower mechanics remain first-party handlers. Excalibur and Empower cooldowns use MiraCore's shared cooldown service with the issued-item UUID as the cooldown subject, preserving cooldowns even if an item changes hands.
+v0.1.6 makes the custom-item layer extensible rather than enum-locked. External Mira modules can register named ability handlers through the MiraItems API, while the built-in Pyro, Excalibur, Lochaber and Empower mechanics remain first-party handlers. Excalibur and Empower cooldowns use MiraCore's shared cooldown service with the issued-item UUID as the cooldown subject, preserving cooldowns even if an item changes hands.
 
 Event item registrations can carry an event ID plus absolute start/end timestamps. Definitions remain persisted and inactive before their start window; expired event definitions are removed from active use. Admin inspection/verification is deliberately non-destructive, and `/mitem migrate` only refreshes canonical metadata/signatures for an item that is already valid and backed by a real issuance record.
 
