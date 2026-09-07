@@ -31,7 +31,7 @@ val downloadMiraDependencies by tasks.registering {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")\n    compileOnly("net.luckperms:api:5.4")
     compileOnly(files(miraCoreJar))
     compileOnly("me.clip:placeholderapi:2.11.6")
     testImplementation(platform("org.junit:junit-bom:5.11.4"))
