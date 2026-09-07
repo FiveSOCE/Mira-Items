@@ -1,6 +1,17 @@
 # MiraItems
 
-## v0.1.7 dynamic vouchers
+## v0.1.8 voucher interaction reliability
+
+Every generated MiraItems voucher now redeems through the same reliable interaction path used by MiraRename:
+
+- right-clicking **in air** redeems the voucher
+- right-clicking a block also redeems it
+- another plugin cancelling the underlying interaction first no longer prevents voucher redemption
+- the actual interacted hand/item is used instead of re-reading the main hand
+- main-hand and off-hand vouchers are both supported and the correct hand is consumed
+
+
+## v0.1.8 dynamic vouchers
 
 MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
 
@@ -23,7 +34,7 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.7**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.7/MiraItems-0.1.7.jar)
+[**Download MiraItems v0.1.8**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.8/MiraItems-0.1.8.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
