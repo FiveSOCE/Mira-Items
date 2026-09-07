@@ -1,6 +1,18 @@
 # MiraItems
 
-## v0.1.9 voucher presentation and tag grants
+## v0.1.10 tag/rank separation
+
+MiraTags creates LuckPerms backing groups named `miratag_<tagid>` for permission-backed tags. MiraItems now explicitly excludes every `miratag_*` group from rank-voucher generation.
+
+Tag vouchers are treated as permissions, not ranks:
+
+- the voucher reads the tag's configured `permission` from `MiraTags/tags.yml`
+- if that field is blank, the fallback is `miratags.tag.<tagid>`
+- redeeming the voucher permanently adds that permission node to the player's LuckPerms user
+- the player can then use/equip the tag through MiraTags normally
+
+
+## v0.1.10 voucher presentation and tag grants
 
 Voucher presentation is standardized:
 
@@ -19,10 +31,10 @@ Voucher lore is exactly two lines:
 
 Voucher items no longer receive MiraItems' normal Owner/Date provenance lore.
 
-Tag vouchers now carry the MiraTags tag ID and redeem through MiraTags' own API, including its native ownership check and permanent internal grant flow. They no longer use LuckPerms rank/group logic.
+Tag vouchers now grant the tag's configured permission node directly to the player. MiraTags LuckPerms backing groups (`miratag_*`) are explicitly excluded from rank voucher discovery, so tags are never presented as ranks.
 
 
-## v0.1.9 voucher interaction reliability
+## v0.1.10 voucher interaction reliability
 
 Every generated MiraItems voucher now redeems through the same reliable interaction path used by MiraRename:
 
@@ -33,7 +45,7 @@ Every generated MiraItems voucher now redeems through the same reliable interact
 - main-hand and off-hand vouchers are both supported and the correct hand is consumed
 
 
-## v0.1.9 dynamic vouchers
+## v0.1.10 dynamic vouchers
 
 MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
 
@@ -56,7 +68,7 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.9**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.9/MiraItems-0.1.9.jar)
+[**Download MiraItems v0.1.10**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.10/MiraItems-0.1.10.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
