@@ -24,16 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraItems-0.1.8
-          path: build/libs/MiraItems-0.1.8.jar
+          name: MiraItems-0.1.9
+          path: build/libs/MiraItems-0.1.9.jar
           if-no-files-found: error
       - name: Publish release
         if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.1.8 >/dev/null 2>&1; then
-            gh release upload v0.1.8 build/libs/MiraItems-0.1.8.jar --clobber
+          if gh release view v0.1.9 >/dev/null 2>&1; then
+            gh release upload v0.1.9 build/libs/MiraItems-0.1.9.jar --clobber
           else
-            gh release create v0.1.8 build/libs/MiraItems-0.1.8.jar --target "${{ github.sha }}" --title "MiraItems v0.1.8" --notes "Makes every MiraItems voucher redeem reliably by right-clicking in air or on a block, even when another plugin pre-cancels the interaction. Supports main-hand and off-hand vouchers."
+            gh release create v0.1.9 build/libs/MiraItems-0.1.9.jar --target "${{ github.sha }}" --title "MiraItems v0.1.9" --notes "Fixes tag voucher redemption through MiraTags itself and standardizes voucher materials/lore."
           fi
