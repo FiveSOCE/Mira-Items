@@ -108,7 +108,9 @@ public final class VoucherService implements Listener {
                 .sorted(Comparator.comparingInt((Group g) -> g.getWeight().orElse(Integer.MIN_VALUE)).thenComparing(Group::getName))
                 .forEach(group -> {
                     String name = group.getName();
+                    String lowerName = name.toLowerCase(Locale.ROOT);
                     String normalized = normalize(name);
+                    if (lowerName.startsWith("miratag_")) return;
                     if (normalized.isBlank() || blocked.stream().anyMatch(normalized::contains)) return;
                     String id = "voucher_rank_" + idPart(name);
                     register(id, "&d&l" + pretty(name) + " Rank Voucher", Material.BOOK,
@@ -150,10 +152,12 @@ public final class VoucherService implements Listener {
             if (section == null || !section.getBoolean("enabled", true)) continue;
             boolean defaultUnlocked = section.getBoolean("default-unlocked", false);
             if (defaultUnlocked) continue;
+            String permission = section.getString("permission", "").trim();
+            if (permission.isBlank()) permission = "miratags.tag." + idPart(rawId);
             String display = strip(section.getString("display-name", rawId));
             register("voucher_tag_" + idPart(rawId), "&d&l" + display + " Tag Voucher", Material.FLOWER_BANNER_PATTERN,
                     voucherLore(display + " Tag"),
-                    new Spec(Type.TAG, rawId, 0), List.of(rawId + "_tag_voucher"));
+                    new Spec(Type.TAG, permission, 0), List.of(rawId + "_tag_voucher"));
         }
     }
 
@@ -204,7 +208,7 @@ public final class VoucherService implements Listener {
             case FLY -> grantPermission(player, commandPermission("fly",
                     plugin.getConfig().getString("vouchers.permissions.fly", "essentials.fly")),
                     "Permanent /fly unlocked.");
-            case TAG -> redeemTag(player, spec.value());
+            case TAG -> grantPermission(player, spec.value(), "Tag unlocked permanently.");
             case AIRDROP -> redeemAirdrop(player);
             case PINATA -> redeemPinata(player);
         };
@@ -265,33 +269,6 @@ public final class VoucherService implements Listener {
         boolean dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kit " + kit + " " + player.getName());
         return dispatched ? Redemption.ok("Redeemed one " + pretty(kit) + " kit.")
                 : Redemption.fail("That kit could not be redeemed.");
-    }
-
-    private Redemption redeemTag(Player player, String tagId) {
-        Plugin target = Bukkit.getPluginManager().getPlugin("MiraTags");
-        if (target == null || !target.isEnabled()) return Redemption.fail("MiraTags is not available.");
-
-        try {
-            ClassLoader loader = target.getClass().getClassLoader();
-            Class<?> apiType = Class.forName("com.mira.tags.api.MiraTagsApi", true, loader);
-            var apiField = target.getClass().getDeclaredField("api");
-            apiField.setAccessible(true);
-            Object api = apiField.get(target);
-            if (api == null) return Redemption.fail("MiraTags API is not available.");
-
-            Method owns = apiType.getMethod("owns", Player.class, String.class);
-            if ((Boolean) owns.invoke(api, player, tagId)) {
-                return Redemption.fail("You already own that tag.");
-            }
-
-            Method grant = apiType.getMethod("grant", UUID.class, String.class);
-            boolean granted = (Boolean) grant.invoke(api, player.getUniqueId(), tagId);
-            return granted ? Redemption.ok("Tag unlocked permanently.")
-                    : Redemption.fail("That tag could not be granted.");
-        } catch (ReflectiveOperationException ex) {
-            plugin.getLogger().warning("Could not redeem MiraTags voucher '" + tagId + "': " + ex.getMessage());
-            return Redemption.fail("MiraTags integration is unavailable.");
-        }
     }
 
     private List<String> voucherLore(String grant) {
