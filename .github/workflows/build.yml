@@ -24,14 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraItems-0.1.7
-          path: build/libs/MiraItems-0.1.7.jar
+          name: MiraItems-0.1.8
+          path: build/libs/MiraItems-0.1.8.jar
           if-no-files-found: error
       - name: Publish release
         if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v0.1.7 >/dev/null 2>&1; then
-            gh release create v0.1.7 build/libs/MiraItems-0.1.7.jar --target "${{ github.sha }}" --title "MiraItems v0.1.7" --notes "Adds dynamic LuckPerms rank vouchers, Jelly Legs, home upgrades, one-use kit vouchers, permanent fly, MiraTags vouchers, and guarded Airdrop/Pinata call vouchers."
+          if gh release view v0.1.8 >/dev/null 2>&1; then
+            gh release upload v0.1.8 build/libs/MiraItems-0.1.8.jar --clobber
+          else
+            gh release create v0.1.8 build/libs/MiraItems-0.1.8.jar --target "${{ github.sha }}" --title "MiraItems v0.1.8" --notes "Makes every MiraItems voucher redeem reliably by right-clicking in air or on a block, even when another plugin pre-cancels the interaction. Supports main-hand and off-hand vouchers."
           fi
