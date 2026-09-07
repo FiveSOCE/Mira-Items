@@ -10,6 +10,7 @@ import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.MiraItemService;
 import com.mira.items.service.UtilityTokenService;
+import com.mira.items.service.VoucherService;
 import com.mira.items.store.ItemStateStore;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -24,6 +25,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
     private MiraItemService items;
     private MiraItemsApi api;
     private UtilityTokenService utilityTokens;
+    private VoucherService vouchers;
     private BukkitTask maintenanceTask;
 
     @Override
@@ -35,6 +37,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
         abilities = new AbilityRegistryService();
         items = new MiraItemService(this, state, registry);
         utilityTokens = new UtilityTokenService(this, core, items);
+        vouchers = new VoucherService(this, items, state);
         api = new MiraItemsApiImpl(items, state, registry, abilities);
 
         core.modules().register(this, "MiraItems");
@@ -43,6 +46,8 @@ public final class MiraItemsPlugin extends JavaPlugin {
         SpecialItemListener listener = new SpecialItemListener(this, core, items, state, abilities);
         getServer().getPluginManager().registerEvents(listener, this);
         getServer().getPluginManager().registerEvents(utilityTokens, this);
+        getServer().getPluginManager().registerEvents(vouchers, this);
+        Bukkit.getScheduler().runTask(this, vouchers::refreshDefinitions);
 
         PluginCommand command = getCommand("mitem");
         if (command == null) {
@@ -72,6 +77,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
     public CustomItemRegistryService registry() { return registry; }
     public AbilityRegistryService abilities() { return abilities; }
     public UtilityTokenService utilityTokens() { return utilityTokens; }
+    public VoucherService vouchers() { return vouchers; }
 
     @Override
     public void onDisable() {
