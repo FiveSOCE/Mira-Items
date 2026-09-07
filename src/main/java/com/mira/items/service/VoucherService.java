@@ -33,7 +33,6 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.function.Function;
 
 public final class VoucherService implements Listener {
     private enum Type { RANK, JELLYLEGS, HOME, KIT, FLY, TAG, AIRDROP, PINATA }
@@ -74,27 +73,26 @@ public final class VoucherService implements Listener {
     }
 
     private void registerStatic() {
-        register("voucher_jellylegs", "&a&lJelly Legs Voucher", Material.RABBIT_FOOT,
-                List.of("&7Permanent access to &f/jellylegs&7.", "", "&eRight-click to redeem."),
+        register("voucher_jellylegs", "&a&lJelly Legs Voucher", Material.PAPER,
+                voucherLore("/jellylegs"),
                 new Spec(Type.JELLYLEGS, "", 0), List.of("jellylegs_voucher"));
 
         for (int tier = 1; tier <= 3; tier++) {
-            register("voucher_home_" + tier, "&6&lHome Upgrade " + roman(tier), Material.OAK_DOOR,
-                    List.of("&7Adds one permanent home slot.", "&7Maximum voucher upgrades: &f3", "",
-                            tier == 1 ? "&eRight-click to redeem." : "&8Requires Home Upgrade " + roman(tier - 1) + "."),
+            register("voucher_home_" + tier, "&6&lHome Upgrade " + roman(tier), Material.PAPER,
+                    voucherLore("Home Upgrade " + roman(tier)),
                     new Spec(Type.HOME, "mira" + tier, tier), List.of("home_voucher_" + tier));
         }
 
         register("voucher_fly", "&b&lPermanent Fly Voucher", Material.FEATHER,
-                List.of("&7Permanent access to &f/fly&7.", "", "&eRight-click to redeem."),
+                voucherLore("/fly"),
                 new Spec(Type.FLY, "", 0), List.of("fly_voucher"));
 
-        register("voucher_airdrop", "&d&lAirdrop Call Voucher", Material.CHEST,
-                List.of("&7Calls a MiraAirdrop event.", "&cCannot be used while one is inbound/active.", "", "&eRight-click to redeem."),
+        register("voucher_airdrop", "&d&lAirdrop Call Voucher", Material.REDSTONE_TORCH,
+                voucherLore("an Airdrop"),
                 new Spec(Type.AIRDROP, "", 0), List.of("airdrop_voucher"));
 
-        register("voucher_pinata", "&6&lPinata Call Voucher", Material.GOLDEN_APPLE,
-                List.of("&7Starts the Mira Pinata countdown.", "&cCannot be used while one is active/counting down.", "", "&eRight-click to redeem."),
+        register("voucher_pinata", "&6&lPinata Call Voucher", Material.SOUL_TORCH,
+                voucherLore("a Pinata"),
                 new Spec(Type.PINATA, "", 0), List.of("pinata_voucher"));
     }
 
@@ -113,10 +111,8 @@ public final class VoucherService implements Listener {
                     String normalized = normalize(name);
                     if (normalized.isBlank() || blocked.stream().anyMatch(normalized::contains)) return;
                     String id = "voucher_rank_" + idPart(name);
-                    register(id, "&d&l" + pretty(name) + " Rank Voucher", Material.PAPER,
-                            List.of("&7Redeems the &f" + name + " &7LuckPerms rank.",
-                                    "&7Players already at an equal/higher weighted rank cannot use it.", "",
-                                    "&eRight-click to redeem."),
+                    register(id, "&d&l" + pretty(name) + " Rank Voucher", Material.BOOK,
+                            voucherLore(pretty(name) + " Rank"),
                             new Spec(Type.RANK, name, 0), List.of(name + "_rank_voucher"));
                 });
     }
@@ -131,9 +127,8 @@ public final class VoucherService implements Listener {
             for (Object value : collection) {
                 String kit = Objects.toString(value, "").trim();
                 if (kit.isBlank()) continue;
-                register("voucher_kit_" + idPart(kit), "&e&l" + pretty(kit) + " Kit Voucher", Material.CHEST,
-                        List.of("&7Redeems one &f" + kit + " &7kit immediately.", "&7This voucher is consumed on use.", "",
-                                "&eRight-click to redeem."),
+                register("voucher_kit_" + idPart(kit), "&e&l" + pretty(kit) + " Kit Voucher", Material.ENDER_CHEST,
+                        voucherLore(pretty(kit) + " Kit"),
                         new Spec(Type.KIT, kit, 0), List.of(kit + "_kit_voucher"));
             }
         } catch (ReflectiveOperationException ex) {
@@ -153,14 +148,12 @@ public final class VoucherService implements Listener {
         for (String rawId : root.getKeys(false)) {
             ConfigurationSection section = root.getConfigurationSection(rawId);
             if (section == null || !section.getBoolean("enabled", true)) continue;
-            String permission = section.getString("permission", "").trim();
             boolean defaultUnlocked = section.getBoolean("default-unlocked", false);
             if (defaultUnlocked) continue;
-            if (permission.isBlank()) permission = "miratags.tag." + idPart(rawId);
             String display = strip(section.getString("display-name", rawId));
-            register("voucher_tag_" + idPart(rawId), "&d&l" + display + " Tag Voucher", Material.NAME_TAG,
-                    List.of("&7Permanently unlocks the &f" + display + " &7tag.", "", "&eRight-click to redeem."),
-                    new Spec(Type.TAG, permission, 0), List.of(rawId + "_tag_voucher"));
+            register("voucher_tag_" + idPart(rawId), "&d&l" + display + " Tag Voucher", Material.FLOWER_BANNER_PATTERN,
+                    voucherLore(display + " Tag"),
+                    new Spec(Type.TAG, rawId, 0), List.of(rawId + "_tag_voucher"));
         }
     }
 
@@ -211,7 +204,7 @@ public final class VoucherService implements Listener {
             case FLY -> grantPermission(player, commandPermission("fly",
                     plugin.getConfig().getString("vouchers.permissions.fly", "essentials.fly")),
                     "Permanent /fly unlocked.");
-            case TAG -> grantPermission(player, spec.value(), "Tag unlocked permanently.");
+            case TAG -> redeemTag(player, spec.value());
             case AIRDROP -> redeemAirdrop(player);
             case PINATA -> redeemPinata(player);
         };
@@ -272,6 +265,38 @@ public final class VoucherService implements Listener {
         boolean dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kit " + kit + " " + player.getName());
         return dispatched ? Redemption.ok("Redeemed one " + pretty(kit) + " kit.")
                 : Redemption.fail("That kit could not be redeemed.");
+    }
+
+    private Redemption redeemTag(Player player, String tagId) {
+        Plugin target = Bukkit.getPluginManager().getPlugin("MiraTags");
+        if (target == null || !target.isEnabled()) return Redemption.fail("MiraTags is not available.");
+
+        try {
+            ClassLoader loader = target.getClass().getClassLoader();
+            Class<?> apiType = Class.forName("com.mira.tags.api.MiraTagsApi", true, loader);
+            Object api = Bukkit.getServicesManager().load((Class) apiType);
+            if (api == null) return Redemption.fail("MiraTags API is not available.");
+
+            Method owns = apiType.getMethod("owns", Player.class, String.class);
+            if ((Boolean) owns.invoke(api, player, tagId)) {
+                return Redemption.fail("You already own that tag.");
+            }
+
+            Method grant = apiType.getMethod("grant", UUID.class, String.class);
+            boolean granted = (Boolean) grant.invoke(api, player.getUniqueId(), tagId);
+            return granted ? Redemption.ok("Tag unlocked permanently.")
+                    : Redemption.fail("That tag could not be granted.");
+        } catch (ReflectiveOperationException ex) {
+            plugin.getLogger().warning("Could not redeem MiraTags voucher '" + tagId + "': " + ex.getMessage());
+            return Redemption.fail("MiraTags integration is unavailable.");
+        }
+    }
+
+    private List<String> voucherLore(String grant) {
+        return List.of(
+                "&7This voucher grants &f" + grant,
+                "&eRight Click to receive"
+        );
     }
 
     private Redemption redeemAirdrop(Player player) {
