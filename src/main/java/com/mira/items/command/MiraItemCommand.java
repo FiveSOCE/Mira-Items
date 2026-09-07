@@ -121,7 +121,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) { error(sender, "Player '" + args[1] + "' is not online."); return; }
         MiraItemDefinition definition = resolve(join(args, 2)).orElse(null);
-        if (definition == null) { error(sender, "Unknown MiraItem. Try pyro_axe, excalibur, lochaber_axe or empower."); return; }
+        if (definition == null) { error(sender, "Unknown MiraItem. Use tab-complete or /mitem status to view registered items."); return; }
         issueTo(sender, target, definition);
     }
 
@@ -244,7 +244,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     private void test(CommandSender sender) {
         int passed = 0;
-        if (MiraItemDefinitions.all().size() == 4) passed++;
+        if (MiraItemDefinitions.all().size() >= 4) passed++;
         if (MiraItemDefinitions.find("Pyro Axe").map(MiraItemDefinition::id).orElse("").equals("pyro_axe")) passed++;
         if (state.limit("pyro_axe") < 0) passed++;
         if (state.limit("excalibur") >= 0) passed++;
@@ -258,14 +258,15 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     private MiraItemDefinition requiredDefinition(CommandSender sender, String[] args) {
         if (args.length < 2) { error(sender, "You must specify an item."); return null; }
         MiraItemDefinition definition = resolve(join(args, 1)).orElse(null);
-        if (definition == null) error(sender, "Unknown MiraItem. Try pyro_axe, excalibur, lochaber_axe or empower.");
+        if (definition == null) error(sender, "Unknown MiraItem. Use tab-complete or /mitem status to view registered items.");
         return definition;
     }
 
     private Optional<MiraItemDefinition> resolve(String input) { return MiraItemDefinitions.find(input); }
     private String join(String[] args, int start) { return String.join(" ", Arrays.copyOfRange(args, start, args.length)); }
     private String definitionName(MiraItemDefinition definition) {
-        return switch (definition.id()) { case "pyro_axe" -> "Pyro Axe"; case "lochaber_axe" -> "Lochaber Axe"; case "empower" -> "Empower!"; default -> "Excalibur"; };
+        if (definition == null) return "MiraItem";
+        return definition.displayName().replaceAll("(?i)&[0-9A-FK-ORX]", "");
     }
 
     private void help(CommandSender sender) {
