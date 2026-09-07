@@ -1,6 +1,28 @@
 # MiraItems
 
-## v0.1.8 voucher interaction reliability
+## v0.1.9 voucher presentation and tag grants
+
+Voucher presentation is standardized:
+
+- default voucher material: `PAPER`
+- kits: `ENDER_CHEST`
+- fly: `FEATHER`
+- airdrop: `REDSTONE_TORCH`
+- pinata: `SOUL_TORCH`
+- ranks: `BOOK`
+- tags: `FLOWER_BANNER_PATTERN`
+
+Voucher lore is exactly two lines:
+
+- `This voucher grants <reward>`
+- `Right Click to receive`
+
+Voucher items no longer receive MiraItems' normal Owner/Date provenance lore.
+
+Tag vouchers now carry the MiraTags tag ID and redeem through MiraTags' own API, including its native ownership check and permanent internal grant flow. They no longer use LuckPerms rank/group logic.
+
+
+## v0.1.9 voucher interaction reliability
 
 Every generated MiraItems voucher now redeems through the same reliable interaction path used by MiraRename:
 
@@ -11,7 +33,7 @@ Every generated MiraItems voucher now redeems through the same reliable interact
 - main-hand and off-hand vouchers are both supported and the correct hand is consumed
 
 
-## v0.1.8 dynamic vouchers
+## v0.1.9 dynamic vouchers
 
 MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
 
@@ -23,7 +45,7 @@ Generated voucher families include:
 - **Home Upgrade I/II/III**. The vouchers are sequential and create three EssentialsX multihome tiers above the normal home baseline.
 - **One-use kit vouchers** generated from every kit discovered through MiraKits/Essentials.
 - **Permanent Fly voucher** granting the command's live Bukkit permission when available, with `essentials.fly` as the configured fallback.
-- **Tag vouchers** generated from enabled, non-default MiraTags entries and their configured tag permissions.
+- **Tag vouchers** generated from enabled, non-default MiraTags entries and redeemed through MiraTags' own ownership/grant API.
 - **Airdrop Call voucher**, rejected while an airdrop is inbound/active.
 - **Pinata Call voucher**, rejected while a Pinata is active/counting down.
 
@@ -34,7 +56,7 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.8**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.8/MiraItems-0.1.8.jar)
+[**Download MiraItems v0.1.9**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.9/MiraItems-0.1.9.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
