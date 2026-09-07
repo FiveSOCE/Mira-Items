@@ -276,6 +276,10 @@ public final class MiraItemService {
     private List<Component> expectedLore(MiraItemDefinition definition, String ownerName, String date) {
         List<Component> lore = new ArrayList<>();
         for (String line : definition.lorePrefix()) lore.add(Text.component(resolve(line, definition, ownerName, date)));
+
+        // Vouchers intentionally stay clean: their definition owns the complete lore.
+        if (definition.abilityId().equalsIgnoreCase("VOUCHER")) return List.copyOf(lore);
+
         lore.add(Text.component("&8Owner: &6" + ownerName));
         lore.add(Text.component("&8Date: &6" + date + "."));
         registry.expiresAt(definition.id()).ifPresent(expiry -> lore.add(Text.component("&8Event Ends: &6" + expiry)));
