@@ -172,13 +172,13 @@ public final class VoucherService implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onRedeem(PlayerInteractEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.getHand() == null) return;
 
         Player player = event.getPlayer();
-        ItemStack held = player.getInventory().getItemInMainHand();
+        ItemStack held = event.getItem();
         MiraItemDefinition definition = items.identify(held).orElse(null);
         if (definition == null) return;
         Spec spec = specs.get(definition.id());
@@ -196,7 +196,7 @@ public final class VoucherService implements Listener {
             return;
         }
 
-        consume(player, held);
+        consume(player, held, event.getHand());
         player.sendMessage(Component.text(result.message(), NamedTextColor.GREEN));
     }
 
@@ -397,9 +397,15 @@ public final class VoucherService implements Listener {
         }
     }
 
-    private void consume(Player player, ItemStack held) {
-        if (held.getAmount() <= 1) player.getInventory().setItemInMainHand(null);
-        else held.setAmount(held.getAmount() - 1);
+    private void consume(Player player, ItemStack held, EquipmentSlot hand) {
+        if (held.getAmount() <= 1) {
+            if (hand == EquipmentSlot.OFF_HAND) player.getInventory().setItemInOffHand(null);
+            else player.getInventory().setItemInMainHand(null);
+        } else {
+            held.setAmount(held.getAmount() - 1);
+            if (hand == EquipmentSlot.OFF_HAND) player.getInventory().setItemInOffHand(held);
+            else player.getInventory().setItemInMainHand(held);
+        }
         player.updateInventory();
     }
 
