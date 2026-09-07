@@ -274,7 +274,9 @@ public final class VoucherService implements Listener {
         try {
             ClassLoader loader = target.getClass().getClassLoader();
             Class<?> apiType = Class.forName("com.mira.tags.api.MiraTagsApi", true, loader);
-            Object api = Bukkit.getServicesManager().load((Class) apiType);
+            var apiField = target.getClass().getDeclaredField("api");
+            apiField.setAccessible(true);
+            Object api = apiField.get(target);
             if (api == null) return Redemption.fail("MiraTags API is not available.");
 
             Method owns = apiType.getMethod("owns", Player.class, String.class);
