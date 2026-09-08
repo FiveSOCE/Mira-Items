@@ -112,6 +112,9 @@ public final class VoucherService implements Listener {
                     String normalized = normalize(name);
                     if (lowerName.startsWith("miratag_")) return;
                     if (normalized.isBlank() || blocked.stream().anyMatch(normalized::contains)) return;
+                    // Rank vouchers require an explicit LuckPerms weight so progression has
+                    // an unambiguous ladder. Unweighted/default/utility groups are not ranks.
+                    if (group.getWeight().isEmpty()) return;
                     String id = "voucher_rank_" + idPart(name);
                     register(id, "&d&l" + pretty(name) + " Rank Voucher", Material.BOOK,
                             voucherLore(pretty(name) + " Rank"),
@@ -222,13 +225,21 @@ public final class VoucherService implements Listener {
         User user = luckPerms.getUserManager().getUser(player.getUniqueId());
         if (user == null) user = luckPerms.getUserManager().loadUser(player.getUniqueId()).join();
 
-        int targetWeight = target.getWeight().orElse(0);
-        int currentWeight = user.getInheritedGroups(QueryOptions.nonContextual()).stream()
-                .filter(g -> !isStaffGroup(g.getName()))
-                .mapToInt(g -> g.getWeight().orElse(0))
-                .max().orElse(Integer.MIN_VALUE);
+        if (target.getWeight().isEmpty()) {
+            return Redemption.fail("That rank has no LuckPerms weight configured.");
+        }
 
-        boolean already = user.getInheritedGroups(QueryOptions.nonContextual()).stream()
+        int targetWeight = target.getWeight().getAsInt();
+        List<Group> inheritedGroups = user.getInheritedGroups(QueryOptions.nonContextual());
+
+        int currentWeight = inheritedGroups.stream()
+                .filter(this::isEligibleRankGroup)
+                .mapToInt(g -> g.getWeight().orElseThrow())
+                .max()
+                .orElse(Integer.MIN_VALUE);
+
+        boolean already = inheritedGroups.stream()
+                .filter(this::isEligibleRankGroup)
                 .anyMatch(g -> g.getName().equalsIgnoreCase(groupName));
         if (already || currentWeight >= targetWeight) {
             return Redemption.fail("You already have this rank or a higher rank.");
@@ -329,6 +340,14 @@ public final class VoucherService implements Listener {
         PluginCommand command = Bukkit.getPluginCommand(commandName);
         if (command != null && command.getPermission() != null && !command.getPermission().isBlank()) return command.getPermission();
         return fallback == null ? "" : fallback.trim();
+    }
+
+    private boolean isEligibleRankGroup(Group group) {
+        if (group == null || group.getWeight().isEmpty()) return false;
+        String name = group.getName();
+        if (name == null || name.isBlank()) return false;
+        if (name.toLowerCase(Locale.ROOT).startsWith("miratag_")) return false;
+        return !isStaffGroup(name);
     }
 
     private boolean isStaffGroup(String name) {
