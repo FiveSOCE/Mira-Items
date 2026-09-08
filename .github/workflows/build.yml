@@ -24,16 +24,16 @@ jobs:
         run: gradle clean build --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraItems-0.1.12
-          path: build/libs/MiraItems-0.1.12.jar
+          name: MiraItems-0.1.13
+          path: build/libs/MiraItems-0.1.13.jar
           if-no-files-found: error
       - name: Publish release
         if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.1.12 >/dev/null 2>&1; then
-            gh release upload v0.1.12 build/libs/MiraItems-0.1.12.jar --clobber
+          if gh release view v0.1.13 >/dev/null 2>&1; then
+            gh release upload v0.1.13 build/libs/MiraItems-0.1.13.jar --clobber
           else
-            gh release create v0.1.12 build/libs/MiraItems-0.1.12.jar --target "${{ github.sha }}" --title "MiraItems v0.1.12" --notes "Restores rank vouchers for unweighted LuckPerms groups and uses Track order first, weight second, exact ownership fallback for rank progression."
+            gh release create v0.1.13 build/libs/MiraItems-0.1.13.jar --target "${{ github.sha }}" --title "MiraItems v0.1.13" --notes "Makes LuckPerms voucher grants synchronous and verified; rank vouchers now set the target as primary group and remove lower direct groups on the same track."
           fi
