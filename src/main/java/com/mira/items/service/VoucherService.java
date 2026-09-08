@@ -230,7 +230,7 @@ public final class VoucherService implements Listener {
         }
 
         int targetWeight = target.getWeight().getAsInt();
-        List<Group> inheritedGroups = user.getInheritedGroups(QueryOptions.nonContextual());
+        Collection<Group> inheritedGroups = user.getInheritedGroups(QueryOptions.nonContextual());
 
         int currentWeight = inheritedGroups.stream()
                 .filter(this::isEligibleRankGroup)
