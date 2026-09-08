@@ -1,6 +1,19 @@
 # MiraItems
 
-## v0.1.11 rank ladder fix
+## v0.1.12 rank voucher persistence
+
+Rank vouchers now generate for all eligible non-staff LuckPerms groups again, including groups without explicit weights.
+
+Progression checks use this order:
+
+1. LuckPerms **Track order** when the target rank belongs to a track.
+2. Explicit LuckPerms **group weights** when no track applies.
+3. Exact-rank ownership only when neither track order nor weight can establish a reliable ladder.
+
+This prevents rank vouchers disappearing after restart while still blocking redemption of the same or a higher rank whenever the LuckPerms configuration provides a real ordering.
+
+
+## v0.1.12 rank ladder fix
 
 Rank vouchers now use only **explicitly weighted LuckPerms rank groups** for both voucher generation and progression checks.
 
@@ -13,7 +26,7 @@ Rank vouchers now use only **explicitly weighted LuckPerms rank groups** for bot
 This fixes the false `You already have this rank or a higher rank` rejection at low/default ranks.
 
 
-## v0.1.11 tag/rank separation
+## v0.1.12 tag/rank separation
 
 MiraTags creates LuckPerms backing groups named `miratag_<tagid>` for permission-backed tags. MiraItems now explicitly excludes every `miratag_*` group from rank-voucher generation.
 
@@ -25,7 +38,7 @@ Tag vouchers are treated as permissions, not ranks:
 - the player can then use/equip the tag through MiraTags normally
 
 
-## v0.1.11 voucher presentation and tag grants
+## v0.1.12 voucher presentation and tag grants
 
 Voucher presentation is standardized:
 
@@ -47,7 +60,7 @@ Voucher items no longer receive MiraItems' normal Owner/Date provenance lore.
 Tag vouchers now grant the tag's configured permission node directly to the player. MiraTags LuckPerms backing groups (`miratag_*`) are explicitly excluded from rank voucher discovery, so tags are never presented as ranks.
 
 
-## v0.1.11 voucher interaction reliability
+## v0.1.12 voucher interaction reliability
 
 Every generated MiraItems voucher now redeems through the same reliable interaction path used by MiraRename:
 
@@ -58,7 +71,7 @@ Every generated MiraItems voucher now redeems through the same reliable interact
 - main-hand and off-hand vouchers are both supported and the correct hand is consumed
 
 
-## v0.1.11 dynamic vouchers
+## v0.1.12 dynamic vouchers
 
 MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
 
@@ -81,7 +94,7 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.11**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.11/MiraItems-0.1.11.jar)
+[**Download MiraItems v0.1.12**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.12/MiraItems-0.1.12.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
