@@ -11,6 +11,7 @@ import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.query.QueryOptions;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.InheritanceNode;
 import net.luckperms.api.node.types.PermissionNode;
 import org.bukkit.Bukkit;
@@ -273,8 +274,36 @@ public final class VoucherService implements Listener {
             }
         }
 
+        // Apply the target as the player's actual rank, not just another inherited group.
+        // If the target belongs to a LuckPerms track, remove lower direct groups from that
+        // same track so primary-group/meta resolution cannot remain stuck on the old rank.
+        if (targetTrackName != null) {
+            var track = luckPerms.getTrackManager().getTrack(targetTrackName);
+            if (track != null) {
+                int targetIndex = indexOfIgnoreCase(track.getGroups(), groupName);
+                Set<String> lowerGroups = new HashSet<>();
+                for (int i = 0; i < targetIndex; i++) {
+                    lowerGroups.add(track.getGroups().get(i).toLowerCase(Locale.ROOT));
+                }
+                user.data().clear(NodeType.INHERITANCE.predicate(node ->
+                        lowerGroups.contains(node.getGroupName().toLowerCase(Locale.ROOT))));
+            }
+        }
+
         user.data().add(InheritanceNode.builder(groupName).value(true).build());
-        luckPerms.getUserManager().saveUser(user);
+        user.setPrimaryGroup(groupName);
+        try {
+            luckPerms.getUserManager().saveUser(user).join();
+        } catch (RuntimeException ex) {
+            plugin.getLogger().severe("Failed to save redeemed rank '" + groupName + "' for "
+                    + player.getName() + ": " + ex.getMessage());
+            return Redemption.fail("That rank could not be saved. Your voucher was not consumed.");
+        }
+
+        if (!user.getInheritedGroups(QueryOptions.nonContextual()).stream()
+                .anyMatch(g -> g.getName().equalsIgnoreCase(groupName))) {
+            return Redemption.fail("LuckPerms did not apply that rank. Your voucher was not consumed.");
+        }
         return Redemption.ok("Redeemed rank: " + pretty(groupName) + ".");
     }
 
@@ -289,7 +318,11 @@ public final class VoucherService implements Listener {
         if (user == null) return Redemption.fail("Could not load your LuckPerms user.");
         user.data().add(PermissionNode.builder("essentials.sethome.multiple").value(true).build());
         user.data().add(PermissionNode.builder("essentials.sethome.multiple." + setName).value(true).build());
-        luckPerms.getUserManager().saveUser(user);
+        try {
+            luckPerms.getUserManager().saveUser(user).join();
+        } catch (RuntimeException ex) {
+            return Redemption.fail("That home upgrade could not be saved. Your voucher was not consumed.");
+        }
         return Redemption.ok("Home Upgrade " + roman(tier) + " unlocked permanently.");
     }
 
@@ -354,7 +387,19 @@ public final class VoucherService implements Listener {
         User user = requireUser(player);
         if (user == null) return Redemption.fail("Could not load your LuckPerms user.");
         user.data().add(PermissionNode.builder(permission).value(true).build());
-        luckPerms.getUserManager().saveUser(user);
+        try {
+            luckPerms.getUserManager().saveUser(user).join();
+        } catch (RuntimeException ex) {
+            plugin.getLogger().severe("Failed to save voucher permission '" + permission + "' for "
+                    + player.getName() + ": " + ex.getMessage());
+            return Redemption.fail("That permission could not be saved. Your voucher was not consumed.");
+        }
+
+        boolean stored = user.getNodes(NodeType.PERMISSION).stream()
+                .anyMatch(node -> node.getKey().equalsIgnoreCase(permission) && node.getValue());
+        if (!stored) {
+            return Redemption.fail("LuckPerms did not apply that permission. Your voucher was not consumed.");
+        }
         return Redemption.ok(success);
     }
 
