@@ -1,6 +1,27 @@
 # MiraItems
 
-## v0.1.12 rank voucher persistence
+## v0.1.13 LuckPerms grant persistence
+
+LuckPerms-backed vouchers now wait for the save to complete and verify the node/group before the voucher is consumed.
+
+Rank vouchers now:
+
+- add the target LuckPerms group
+- set that group as the player's primary group
+- remove lower direct groups from the same LuckPerms track when applicable
+- wait for LuckPerms to save successfully
+- verify the target rank is actually inherited before reporting success
+
+Direct permission vouchers now:
+
+- add the permission node
+- wait for LuckPerms to save successfully
+- verify the permission node exists on the user's data before reporting success
+
+If LuckPerms fails to persist the grant, the voucher is not consumed.
+
+
+## v0.1.13 rank voucher persistence
 
 Rank vouchers now generate for all eligible non-staff LuckPerms groups again, including groups without explicit weights.
 
@@ -13,7 +34,7 @@ Progression checks use this order:
 This prevents rank vouchers disappearing after restart while still blocking redemption of the same or a higher rank whenever the LuckPerms configuration provides a real ordering.
 
 
-## v0.1.12 rank ladder fix
+## v0.1.13 rank ladder fix
 
 Rank vouchers now use only **explicitly weighted LuckPerms rank groups** for both voucher generation and progression checks.
 
@@ -26,7 +47,7 @@ Rank vouchers now use only **explicitly weighted LuckPerms rank groups** for bot
 This fixes the false `You already have this rank or a higher rank` rejection at low/default ranks.
 
 
-## v0.1.12 tag/rank separation
+## v0.1.13 tag/rank separation
 
 MiraTags creates LuckPerms backing groups named `miratag_<tagid>` for permission-backed tags. MiraItems now explicitly excludes every `miratag_*` group from rank-voucher generation.
 
@@ -38,7 +59,7 @@ Tag vouchers are treated as permissions, not ranks:
 - the player can then use/equip the tag through MiraTags normally
 
 
-## v0.1.12 voucher presentation and tag grants
+## v0.1.13 voucher presentation and tag grants
 
 Voucher presentation is standardized:
 
@@ -60,7 +81,7 @@ Voucher items no longer receive MiraItems' normal Owner/Date provenance lore.
 Tag vouchers now grant the tag's configured permission node directly to the player. MiraTags LuckPerms backing groups (`miratag_*`) are explicitly excluded from rank voucher discovery, so tags are never presented as ranks.
 
 
-## v0.1.12 voucher interaction reliability
+## v0.1.13 voucher interaction reliability
 
 Every generated MiraItems voucher now redeems through the same reliable interaction path used by MiraRename:
 
@@ -71,7 +92,7 @@ Every generated MiraItems voucher now redeems through the same reliable interact
 - main-hand and off-hand vouchers are both supported and the correct hand is consumed
 
 
-## v0.1.12 dynamic vouchers
+## v0.1.13 dynamic vouchers
 
 MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
 
@@ -94,7 +115,7 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.12**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.12/MiraItems-0.1.12.jar)
+[**Download MiraItems v0.1.13**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.13/MiraItems-0.1.13.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
