@@ -115,10 +115,15 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.13**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.13/MiraItems-0.1.13.jar)
+Latest release: **MiraItems v0.1.14**
 
-Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
+Direct JAR:
 
+https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.14/MiraItems-0.1.14.jar
+
+Release page:
+
+https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.14
 ## Requirements / Dependencies
 
 - Paper 1.21.11
