@@ -1,6 +1,19 @@
 # MiraItems
 
-## v0.1.10 tag/rank separation
+## v0.1.11 rank ladder fix
+
+Rank vouchers now use only **explicitly weighted LuckPerms rank groups** for both voucher generation and progression checks.
+
+- unweighted/default/utility groups do not generate rank vouchers
+- `miratag_*` backing groups remain excluded
+- staff-style groups remain excluded
+- the player's current ladder position is the highest inherited eligible weighted rank
+- an unranked/default player no longer compares as weight `0` against every target rank
+
+This fixes the false `You already have this rank or a higher rank` rejection at low/default ranks.
+
+
+## v0.1.11 tag/rank separation
 
 MiraTags creates LuckPerms backing groups named `miratag_<tagid>` for permission-backed tags. MiraItems now explicitly excludes every `miratag_*` group from rank-voucher generation.
 
@@ -12,7 +25,7 @@ Tag vouchers are treated as permissions, not ranks:
 - the player can then use/equip the tag through MiraTags normally
 
 
-## v0.1.10 voucher presentation and tag grants
+## v0.1.11 voucher presentation and tag grants
 
 Voucher presentation is standardized:
 
@@ -34,7 +47,7 @@ Voucher items no longer receive MiraItems' normal Owner/Date provenance lore.
 Tag vouchers now grant the tag's configured permission node directly to the player. MiraTags LuckPerms backing groups (`miratag_*`) are explicitly excluded from rank voucher discovery, so tags are never presented as ranks.
 
 
-## v0.1.10 voucher interaction reliability
+## v0.1.11 voucher interaction reliability
 
 Every generated MiraItems voucher now redeems through the same reliable interaction path used by MiraRename:
 
@@ -45,7 +58,7 @@ Every generated MiraItems voucher now redeems through the same reliable interact
 - main-hand and off-hand vouchers are both supported and the correct hand is consumed
 
 
-## v0.1.10 dynamic vouchers
+## v0.1.11 dynamic vouchers
 
 MiraItems can now generate voucher MiraItems from the live server configuration instead of requiring every voucher to be hard-coded.
 
@@ -68,7 +81,7 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-[**Download MiraItems v0.1.10**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.10/MiraItems-0.1.10.jar)
+[**Download MiraItems v0.1.11**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.11/MiraItems-0.1.11.jar)
 
 Adds signed custom rename overlays plus repair/rename utility tokens and admin token issuance.
 
