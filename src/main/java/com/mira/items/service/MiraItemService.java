@@ -39,6 +39,7 @@ public final class MiraItemService {
     private final NamespacedKey signatureKey;
     private final NamespacedKey renameValueKey;
     private final NamespacedKey renameSignatureKey;
+    private static final NamespacedKey PYRO_AXE_MODEL = new NamespacedKey("mira", "pyro_axe");
     private final String secret;
 
     public MiraItemService(MiraItemsPlugin plugin, ItemStateStore state, CustomItemRegistryService registry) {
@@ -67,7 +68,9 @@ public final class MiraItemService {
             ItemMeta meta = item.getItemMeta();
             meta.displayName(Text.component(resolve(definition.displayName(), definition, record.ownerName(), record.date())));
             meta.lore(expectedLore(definition, record.ownerName(), record.date()));
+        applyCanonicalModel(meta, definition);
             definition.enchants().forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
+            applyCanonicalModel(meta, definition);
             if (definition.ability(MiraAbility.EMPOWER)) {
                 if (!(meta instanceof MusicInstrumentMeta instrumentMeta)) throw new IllegalStateException("GOAT_HORN did not expose MusicInstrumentMeta");
                 instrumentMeta.setInstrument(MusicInstrument.YEARN_GOAT_HORN);
@@ -150,6 +153,14 @@ public final class MiraItemService {
         if (!valid) {
             if (invalidateOnFailure) stripBacking(item);
             return Optional.empty();
+        }
+
+        // Item models are derived from the authenticated MiraItem identity, not trusted as identity themselves.
+        // This also transparently migrates legitimate pre-resource-pack Pyro Axes when they are first seen.
+        NamespacedKey expectedModel = modelKey(definition);
+        if (expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
+            meta.setItemModel(expectedModel);
+            item.setItemMeta(meta);
         }
         return Optional.of(definition);
     }
@@ -270,7 +281,18 @@ public final class MiraItemService {
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.remove(itemIdKey); pdc.remove(issueIdKey); pdc.remove(ownerUuidKey); pdc.remove(ownerNameKey); pdc.remove(issuedDateKey); pdc.remove(signatureKey);
         pdc.remove(renameValueKey); pdc.remove(renameSignatureKey);
+        NamespacedKey itemModel = meta.getItemModel();
+        if (itemModel != null && itemModel.getNamespace().equals("mira")) meta.setItemModel(null);
         item.setItemMeta(meta);
+    }
+
+    private NamespacedKey modelKey(MiraItemDefinition definition) {
+        return definition.id().equalsIgnoreCase("pyro_axe") ? PYRO_AXE_MODEL : null;
+    }
+
+    private void applyCanonicalModel(ItemMeta meta, MiraItemDefinition definition) {
+        NamespacedKey model = modelKey(definition);
+        if (model != null) meta.setItemModel(model);
     }
 
     private List<Component> expectedLore(MiraItemDefinition definition, String ownerName, String date) {
