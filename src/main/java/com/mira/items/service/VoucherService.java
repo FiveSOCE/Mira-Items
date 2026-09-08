@@ -112,9 +112,6 @@ public final class VoucherService implements Listener {
                     String normalized = normalize(name);
                     if (lowerName.startsWith("miratag_")) return;
                     if (normalized.isBlank() || blocked.stream().anyMatch(normalized::contains)) return;
-                    // Rank vouchers require an explicit LuckPerms weight so progression has
-                    // an unambiguous ladder. Unweighted/default/utility groups are not ranks.
-                    if (group.getWeight().isEmpty()) return;
                     String id = "voucher_rank_" + idPart(name);
                     register(id, "&d&l" + pretty(name) + " Rank Voucher", Material.BOOK,
                             voucherLore(pretty(name) + " Rank"),
@@ -225,24 +222,55 @@ public final class VoucherService implements Listener {
         User user = luckPerms.getUserManager().getUser(player.getUniqueId());
         if (user == null) user = luckPerms.getUserManager().loadUser(player.getUniqueId()).join();
 
-        if (target.getWeight().isEmpty()) {
-            return Redemption.fail("That rank has no LuckPerms weight configured.");
-        }
-
-        int targetWeight = target.getWeight().getAsInt();
         Collection<Group> inheritedGroups = user.getInheritedGroups(QueryOptions.nonContextual());
-
-        int currentWeight = inheritedGroups.stream()
-                .filter(this::isEligibleRankGroup)
-                .mapToInt(g -> g.getWeight().orElseThrow())
-                .max()
-                .orElse(Integer.MIN_VALUE);
 
         boolean already = inheritedGroups.stream()
                 .filter(this::isEligibleRankGroup)
                 .anyMatch(g -> g.getName().equalsIgnoreCase(groupName));
-        if (already || currentWeight >= targetWeight) {
+        if (already) {
             return Redemption.fail("You already have this rank or a higher rank.");
+        }
+
+        // Prefer LuckPerms track order when the target rank is on a track.
+        // Tracks are the cleanest representation of a rank ladder and do not
+        // require numeric weights.
+        Integer targetTrackIndex = null;
+        String targetTrackName = null;
+        for (var track : luckPerms.getTrackManager().getLoadedTracks()) {
+            List<String> groups = track.getGroups();
+            int index = indexOfIgnoreCase(groups, groupName);
+            if (index >= 0) {
+                targetTrackIndex = index;
+                targetTrackName = track.getName();
+                break;
+            }
+        }
+
+        if (targetTrackIndex != null && targetTrackName != null) {
+            var track = luckPerms.getTrackManager().getTrack(targetTrackName);
+            if (track != null) {
+                int highestOwnedIndex = -1;
+                for (Group inherited : inheritedGroups) {
+                    if (!isEligibleRankGroup(inherited)) continue;
+                    int index = indexOfIgnoreCase(track.getGroups(), inherited.getName());
+                    if (index > highestOwnedIndex) highestOwnedIndex = index;
+                }
+                if (highestOwnedIndex >= targetTrackIndex) {
+                    return Redemption.fail("You already have this rank or a higher rank.");
+                }
+            }
+        } else if (target.getWeight().isPresent()) {
+            // If no track applies, use explicit LuckPerms weights when present.
+            int targetWeight = target.getWeight().getAsInt();
+            int currentWeight = inheritedGroups.stream()
+                    .filter(this::isEligibleRankGroup)
+                    .filter(g -> g.getWeight().isPresent())
+                    .mapToInt(g -> g.getWeight().getAsInt())
+                    .max()
+                    .orElse(Integer.MIN_VALUE);
+            if (currentWeight >= targetWeight) {
+                return Redemption.fail("You already have this rank or a higher rank.");
+            }
         }
 
         user.data().add(InheritanceNode.builder(groupName).value(true).build());
@@ -343,11 +371,19 @@ public final class VoucherService implements Listener {
     }
 
     private boolean isEligibleRankGroup(Group group) {
-        if (group == null || group.getWeight().isEmpty()) return false;
+        if (group == null) return false;
         String name = group.getName();
         if (name == null || name.isBlank()) return false;
         if (name.toLowerCase(Locale.ROOT).startsWith("miratag_")) return false;
         return !isStaffGroup(name);
+    }
+
+    private int indexOfIgnoreCase(List<String> values, String target) {
+        if (values == null || target == null) return -1;
+        for (int i = 0; i < values.size(); i++) {
+            if (values.get(i).equalsIgnoreCase(target)) return i;
+        }
+        return -1;
     }
 
     private boolean isStaffGroup(String name) {
