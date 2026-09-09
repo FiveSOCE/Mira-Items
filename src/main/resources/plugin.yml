@@ -1,5 +1,5 @@
 name: MiraItems
-version: 0.1.17
+version: 0.1.18
 main: com.mira.items.MiraItemsPlugin
 api-version: '1.21'
 authors: [FiveS]
@@ -13,6 +13,7 @@ commands:
     usage: /mi <player> <reward>
     aliases: [mitem, miraitem, miraitems]
     permission: miraitems.admin
+    permission-message: "You do not have permission to use MiraItems."
 
 permissions:
   miraitems.admin:
