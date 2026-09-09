@@ -143,6 +143,9 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         Optional<MiraItemDefinition> direct = resolve(input);
         if (direct.isPresent()) return direct;
 
+        Optional<MiraItemDefinition> shortReward = resolveShortReward(input);
+        if (shortReward.isPresent()) return shortReward;
+
         String value = input == null ? "" : input.trim();
         int dot = value.indexOf('.');
         if (dot <= 0 || dot == value.length() - 1) return Optional.empty();
@@ -151,7 +154,26 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         String reward = slug(value.substring(dot + 1));
         if (family.isBlank() || reward.isBlank()) return Optional.empty();
 
-        return resolve("voucher_" + family + "_" + reward);
+        Optional<MiraItemDefinition> dotted = resolve("voucher_" + family + "_" + reward);
+        if (dotted.isPresent()) return dotted;
+
+        return resolveShortReward(value);
+    }
+
+    private Optional<MiraItemDefinition> resolveShortReward(String input) {
+        String shortName = slug(input);
+        if (shortName.isBlank()) return Optional.empty();
+
+        List<MiraItemDefinition> matches = MiraItemDefinitions.all().stream()
+                .filter(definition -> {
+                    String id = definition.id().toLowerCase(Locale.ROOT);
+                    if (!id.startsWith("voucher_")) return false;
+                    if (id.equals("voucher_" + shortName)) return true;
+                    return id.endsWith("_" + shortName);
+                })
+                .toList();
+
+        return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
     }
 
     private String slug(String value) {
@@ -345,7 +367,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2
                 && Bukkit.getPlayerExact(args[0]) != null
                 && !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
-            List<String> rewards = new ArrayList<>(itemIds());
+            List<String> rewards = new ArrayList<>(grantNames());
             rewards.addAll(List.of("Rank.", "Tag.", "Kit."));
             return matching(rewards, args[1]);
         }
@@ -366,6 +388,21 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     }
 
     private List<String> itemIds() { return MiraItemDefinitions.all().stream().map(MiraItemDefinition::id).toList(); }
+
+    private List<String> grantNames() {
+        return MiraItemDefinitions.all().stream()
+                .map(definition -> {
+                    String id = definition.id();
+                    if (!id.startsWith("voucher_")) return id;
+                    if (id.startsWith("voucher_rank_")) return id.substring("voucher_rank_".length());
+                    if (id.startsWith("voucher_tag_")) return id.substring("voucher_tag_".length());
+                    if (id.startsWith("voucher_kit_")) return id.substring("voucher_kit_".length());
+                    return id.substring("voucher_".length());
+                })
+                .distinct()
+                .sorted()
+                .toList();
+    }
     private List<String> matching(List<String> values, String input) {
         String lower = input.toLowerCase(Locale.ROOT);
         return values.stream().filter(value -> value.toLowerCase(Locale.ROOT).startsWith(lower)).sorted().toList();
