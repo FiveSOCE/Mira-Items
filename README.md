@@ -1,3 +1,8 @@
+## v0.1.21 model reliability + Lochaber fix
+
+- Valid claimed MiraItems now have their canonical resource-pack model continuously re-enforced during inventory maintenance, including existing rank and Pinata vouchers.
+- Lochaber Axe now hooks any living target rather than only players.
+
 ## v0.1.20 custom item visuals
 
 Permanent resource-pack model keys are now assigned only to authenticated MiraItems:
@@ -33,9 +38,9 @@ If a short name is ambiguous, use the explicit dotted form such as `Rank.Hermes`
 
 ## Download
 
-**Latest compatibility release: v0.1.20**
+**Latest compatibility release: v0.1.21**
 
-[**Download MiraItems-0.1.20.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.20/MiraItems-0.1.20.jar)
+[**Download MiraItems-0.1.21.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.21/MiraItems-0.1.21.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Items/releases)
 
