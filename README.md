@@ -1,3 +1,9 @@
+## v0.1.18 /mi permission hardening
+
+- `/mi` is fully locked behind `miraitems.admin` for player senders.
+- Console remains allowed so Tebex and server automation can execute grants.
+- A runtime permission check backs up Bukkit's command permission metadata.
+
 ## v0.1.17 canonical /mi issuance
 
 `/mi` is now the primary MiraItems command.
@@ -141,15 +147,15 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-Latest release: **MiraItems v0.1.17**
+Latest release: **MiraItems v0.1.18**
 
 Direct JAR:
 
-https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.17/MiraItems-0.1.17.jar
+https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.18/MiraItems-0.1.18.jar
 
 Release page:
 
-https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.17
+https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.18
 ## Requirements / Dependencies
 
 - Paper 1.21.11
