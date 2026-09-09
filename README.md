@@ -1,3 +1,13 @@
+# MiraItems
+
+## Download
+
+**Latest compatibility release: v0.1.18**
+
+[**Download MiraItems-0.1.18.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.18/MiraItems-0.1.18.jar)
+
+[View all releases](https://github.com/FiveSOCE/Mira-Items/releases)
+
 ## v0.1.18 /mi permission hardening
 
 - `/mi` is fully locked behind `miraitems.admin` for player senders.
@@ -145,17 +155,6 @@ The generated vouchers are ordinary registered MiraItem definitions, so administ
 
 MiraItems is the scarce tracked-special-item system for the Mira Paper server suite. It issues uniquely signed custom weapons/items, enforces scarcity limits and integrity checks, and attaches custom combat or utility abilities to those issued copies.
 
-## Download
-
-Latest release: **MiraItems v0.1.18**
-
-Direct JAR:
-
-https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.18/MiraItems-0.1.18.jar
-
-Release page:
-
-https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.18
 ## Requirements / Dependencies
 
 - Paper 1.21.11
