@@ -15,6 +15,16 @@ mechanics:
   dark-rider-luck-refresh-ticks: 60
   dark-rider-repair-cooldown-seconds: 300
 
+# MythicArmors owns the real 3D worn geometry. Keep disabled until dark_rider.bbmodel
+# has been loaded with /ma reload and the generated component keys are known.
+mythic-armors:
+  dark-rider:
+    enabled: false
+    helmet-item-model: ""
+    chestplate-equipment-model: ""
+    leggings-equipment-model: ""
+    boots-equipment-model: ""
+
 integrity:
   scan-interval-ticks: 40
 

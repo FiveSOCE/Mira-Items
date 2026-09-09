@@ -4,7 +4,7 @@ import java.security.MessageDigest
 plugins { java }
 
 group = "com.mira"
-version = "0.1.24"
+version = "0.1.25"
 
 repositories {
     mavenCentral()

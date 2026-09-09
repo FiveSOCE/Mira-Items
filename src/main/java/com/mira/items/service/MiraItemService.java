@@ -49,7 +49,6 @@ public final class MiraItemService {
     private static final NamespacedKey DARK_RIDER_CHESTPLATE_MODEL = new NamespacedKey("mira", "dark_rider_chestplate");
     private static final NamespacedKey DARK_RIDER_LEGGINGS_MODEL = new NamespacedKey("mira", "dark_rider_leggings");
     private static final NamespacedKey DARK_RIDER_BOOTS_MODEL = new NamespacedKey("mira", "dark_rider_boots");
-    private static final NamespacedKey DARK_RIDER_EQUIPMENT_MODEL = new NamespacedKey("mira", "dark_rider");
     private static final NamespacedKey VANILLA_NETHERITE_EQUIPMENT_MODEL = new NamespacedKey("minecraft", "netherite");
     private static final NamespacedKey VOUCHER_RANK_MODEL = new NamespacedKey("mira", "voucher_rank");
     private static final NamespacedKey VOUCHER_PINATA_MODEL = new NamespacedKey("mira", "voucher_pinata");
@@ -332,7 +331,9 @@ public final class MiraItemService {
         pdc.remove(itemIdKey); pdc.remove(issueIdKey); pdc.remove(ownerUuidKey); pdc.remove(ownerNameKey); pdc.remove(issuedDateKey); pdc.remove(signatureKey);
         pdc.remove(renameValueKey); pdc.remove(renameSignatureKey);
         NamespacedKey itemModel = meta.getItemModel();
-        if (itemModel != null && itemModel.getNamespace().equals("mira")) meta.setItemModel(null);
+        if (itemModel != null && (itemModel.getNamespace().equals("mira") || itemModel.getNamespace().equals("mythicarmor"))) {
+            meta.setItemModel(null);
+        }
         EquipmentSlot vanillaSlot = armorSlot(backedItemId);
         if (vanillaSlot != null) {
             EquippableComponent equippable = meta.getEquippable();
@@ -348,7 +349,7 @@ public final class MiraItemService {
         if (id.equals("excalibur")) return EXCALIBUR_MODEL;
         if (id.equals("lochaber_axe")) return LOCHABER_AXE_MODEL;
         if (id.equals("empower")) return EMPOWER_MODEL;
-        if (id.equals("dark_rider_helmet")) return DARK_RIDER_HELMET_MODEL;
+        if (id.equals("dark_rider_helmet")) return darkRiderHelmetItemModel();
         if (id.equals("dark_rider_chestplate")) return DARK_RIDER_CHESTPLATE_MODEL;
         if (id.equals("dark_rider_leggings")) return DARK_RIDER_LEGGINGS_MODEL;
         if (id.equals("dark_rider_boots")) return DARK_RIDER_BOOTS_MODEL;
@@ -363,7 +364,33 @@ public final class MiraItemService {
     }
 
     private NamespacedKey equipmentModelKey(MiraItemDefinition definition) {
-        return definition.ability(MiraAbility.DARK_RIDER) ? DARK_RIDER_EQUIPMENT_MODEL : null;
+        if (!definition.ability(MiraAbility.DARK_RIDER)) return null;
+        return switch (definition.id().toLowerCase(java.util.Locale.ROOT)) {
+            case "dark_rider_chestplate" -> configuredMythicArmorKey("chestplate-equipment-model");
+            case "dark_rider_leggings" -> configuredMythicArmorKey("leggings-equipment-model");
+            case "dark_rider_boots" -> configuredMythicArmorKey("boots-equipment-model");
+            default -> VANILLA_NETHERITE_EQUIPMENT_MODEL;
+        };
+    }
+
+    private NamespacedKey darkRiderHelmetItemModel() {
+        NamespacedKey configured = configuredMythicArmorKey("helmet-item-model");
+        return configured.equals(VANILLA_NETHERITE_EQUIPMENT_MODEL) ? DARK_RIDER_HELMET_MODEL : configured;
+    }
+
+    private NamespacedKey configuredMythicArmorKey(String key) {
+        boolean enabled = plugin.getConfig().getBoolean("mythic-armors.dark-rider.enabled", false)
+                && plugin.getServer().getPluginManager().isPluginEnabled("MythicArmors");
+        if (!enabled) return VANILLA_NETHERITE_EQUIPMENT_MODEL;
+
+        String raw = plugin.getConfig().getString("mythic-armors.dark-rider." + key, "").trim().toLowerCase(java.util.Locale.ROOT);
+        if (raw.isEmpty()) return VANILLA_NETHERITE_EQUIPMENT_MODEL;
+        int separator = raw.indexOf(':');
+        if (separator <= 0 || separator == raw.length() - 1) {
+            plugin.getLogger().warning("Invalid MythicArmors key for " + key + ": " + raw + "; using vanilla Netherite.");
+            return VANILLA_NETHERITE_EQUIPMENT_MODEL;
+        }
+        return new NamespacedKey(raw.substring(0, separator), raw.substring(separator + 1));
     }
 
     private void applyCanonicalVisuals(ItemMeta meta, MiraItemDefinition definition) {
