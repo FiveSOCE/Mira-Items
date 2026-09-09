@@ -1,3 +1,13 @@
+## v0.1.16 Tebex-friendly grants
+
+MiraItems now supports a short console-safe store syntax:
+
+- `/mi <player> Rank.Hermes` → resolves to `voucher_rank_hermes`
+- `/mi <player> Tag.Reaper` → resolves to `voucher_tag_reaper`
+- `/mi <player> Kit.Starter` → resolves to `voucher_kit_starter`
+
+The command targets an online player directly and issues the existing signed MiraItem/voucher through the normal issuance pipeline. Existing `/mitem give ...` commands remain unchanged.
+
 # MiraItems
 
 ## v0.1.13 LuckPerms grant persistence
@@ -115,15 +125,15 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-Latest release: **MiraItems v0.1.14**
+Latest release: **MiraItems v0.1.16**
 
 Direct JAR:
 
-https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.15/MiraItems-0.1.15.jar
+https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.16/MiraItems-0.1.16.jar
 
 Release page:
 
-https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.14
+https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.16
 ## Requirements / Dependencies
 
 - Paper 1.21.11
