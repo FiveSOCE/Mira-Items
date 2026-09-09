@@ -56,18 +56,18 @@ jobs:
         run: gradle clean test build -PpaperApiVersion=1.21.11-R0.1-SNAPSHOT -PcompileJavaVersion=21 -PbytecodeJavaVersion=21 --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: MiraItems-0.1.23
-          path: build/libs/MiraItems-0.1.23.jar
+          name: MiraItems-0.1.24
+          path: build/libs/MiraItems-0.1.24.jar
           if-no-files-found: error
       - name: Publish release
         if: success() && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v0.1.23"
-          JAR="build/libs/MiraItems-0.1.23.jar"
+          TAG="v0.1.24"
+          JAR="build/libs/MiraItems-0.1.24.jar"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$JAR" --clobber
           else
-            gh release create "$TAG" "$JAR" --target "${{ github.sha }}" --title "MiraItems v0.1.23" --notes "Adds Dark Rider custom item/equipment resource-pack bindings alongside the full-set Luck X and 5-minute auto-repair mechanics. Compatibility remains Paper/Minecraft 1.21.11 through 26.2."
+            gh release create "$TAG" "$JAR" --target "${{ github.sha }}" --title "MiraItems v0.1.24" --notes "Fixes Dark Rider armor equipping and adds server-synced 3D horn/wing attachments visible to nearby players. Compatibility remains Paper/Minecraft 1.21.11 through 26.2."
           fi

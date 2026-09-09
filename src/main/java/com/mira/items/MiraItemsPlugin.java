@@ -9,6 +9,7 @@ import com.mira.items.listener.SpecialItemListener;
 import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.DarkRiderSetService;
+import com.mira.items.service.DarkRiderVisualService;
 import com.mira.items.service.MiraItemService;
 import com.mira.items.service.UtilityTokenService;
 import com.mira.items.service.VoucherService;
@@ -28,7 +29,9 @@ public final class MiraItemsPlugin extends JavaPlugin {
     private UtilityTokenService utilityTokens;
     private VoucherService vouchers;
     private DarkRiderSetService darkRider;
+    private DarkRiderVisualService darkRiderVisuals;
     private BukkitTask maintenanceTask;
+    private BukkitTask visualTask;
 
     @Override
     public void onEnable() {
@@ -41,6 +44,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
         utilityTokens = new UtilityTokenService(this, core, items);
         vouchers = new VoucherService(this, items, state);
         darkRider = new DarkRiderSetService(this, core, items, state);
+        darkRiderVisuals = new DarkRiderVisualService(this, items);
         api = new MiraItemsApiImpl(items, state, registry, abilities);
 
         core.modules().register(this, "MiraItems");
@@ -70,9 +74,10 @@ public final class MiraItemsPlugin extends JavaPlugin {
             listener.maintenance();
             darkRider.maintenance();
         }, 20L, 20L);
+        visualTask = Bukkit.getScheduler().runTaskTimer(this, darkRiderVisuals::tick, 2L, 2L);
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
-                "Custom item/ability registries, event windows, Core cooldowns, Dark Rider set bonuses, verification tools and PAPI displays ready");
+                "Custom item/ability registries, event windows, Core cooldowns, Dark Rider set bonuses + 3D attachments, verification tools and PAPI displays ready");
         getLogger().info("MiraItems v" + getPluginMeta().getVersion() + " enabled.");
     }
 
@@ -86,6 +91,8 @@ public final class MiraItemsPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         if (maintenanceTask != null) maintenanceTask.cancel();
+        if (visualTask != null) visualTask.cancel();
+        if (darkRiderVisuals != null) darkRiderVisuals.shutdown();
         if (core != null) {
             if (api != null) core.services().unregister(MiraItemsApi.class, api);
             core.modules().unregister(this);

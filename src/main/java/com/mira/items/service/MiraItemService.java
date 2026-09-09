@@ -10,6 +10,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
@@ -180,10 +181,15 @@ public final class MiraItemService {
             visualChanged = true;
         }
         NamespacedKey expectedEquipment = equipmentModelKey(definition);
-        if (expectedEquipment != null) {
+        EquipmentSlot expectedSlot = armorSlot(definition.id());
+        if (expectedEquipment != null && expectedSlot != null) {
             EquippableComponent equippable = meta.getEquippable();
-            if (!expectedEquipment.equals(equippable.getModel())) {
-                equippable.setModel(expectedEquipment);
+            if (!expectedEquipment.equals(equippable.getModel())
+                    || expectedSlot != equippable.getSlot()
+                    || !equippable.isSwappable()
+                    || !equippable.isDispensable()
+                    || !equippable.isDamageOnHurt()) {
+                configureDarkRiderEquippable(equippable, expectedEquipment, expectedSlot);
                 meta.setEquippable(equippable);
                 visualChanged = true;
             }
@@ -327,9 +333,10 @@ public final class MiraItemService {
         pdc.remove(renameValueKey); pdc.remove(renameSignatureKey);
         NamespacedKey itemModel = meta.getItemModel();
         if (itemModel != null && itemModel.getNamespace().equals("mira")) meta.setItemModel(null);
-        if (backedItemId != null && backedItemId.startsWith("dark_rider_")) {
+        EquipmentSlot vanillaSlot = armorSlot(backedItemId);
+        if (vanillaSlot != null) {
             EquippableComponent equippable = meta.getEquippable();
-            equippable.setModel(VANILLA_NETHERITE_EQUIPMENT_MODEL);
+            configureDarkRiderEquippable(equippable, VANILLA_NETHERITE_EQUIPMENT_MODEL, vanillaSlot);
             meta.setEquippable(equippable);
         }
         item.setItemMeta(meta);
@@ -364,11 +371,31 @@ public final class MiraItemService {
         if (model != null) meta.setItemModel(model);
 
         NamespacedKey equipment = equipmentModelKey(definition);
-        if (equipment != null) {
+        EquipmentSlot slot = armorSlot(definition.id());
+        if (equipment != null && slot != null) {
             EquippableComponent equippable = meta.getEquippable();
-            equippable.setModel(equipment);
+            configureDarkRiderEquippable(equippable, equipment, slot);
             meta.setEquippable(equippable);
         }
+    }
+
+    private static void configureDarkRiderEquippable(EquippableComponent equippable, NamespacedKey model, EquipmentSlot slot) {
+        equippable.setModel(model);
+        equippable.setSlot(slot);
+        equippable.setSwappable(true);
+        equippable.setDispensable(true);
+        equippable.setDamageOnHurt(true);
+    }
+
+    private static EquipmentSlot armorSlot(String itemId) {
+        if (itemId == null) return null;
+        return switch (itemId.toLowerCase(java.util.Locale.ROOT)) {
+            case "dark_rider_helmet" -> EquipmentSlot.HEAD;
+            case "dark_rider_chestplate" -> EquipmentSlot.CHEST;
+            case "dark_rider_leggings" -> EquipmentSlot.LEGS;
+            case "dark_rider_boots" -> EquipmentSlot.FEET;
+            default -> null;
+        };
     }
 
     private List<Component> expectedLore(MiraItemDefinition definition, String ownerName, String date) {
