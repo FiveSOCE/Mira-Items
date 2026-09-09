@@ -77,7 +77,7 @@ public final class SpecialItemListener implements Listener {
             applyExcalibur(weapon, attacker, target);
             return;
         }
-        if (definition.ability(MiraAbility.LOCHABER) && event.getEntity() instanceof Player target) {
+        if (definition.ability(MiraAbility.LOCHABER) && event.getEntity() instanceof LivingEntity target) {
             applyLochaber(weapon, attacker, target);
         }
     }
@@ -205,7 +205,7 @@ public final class SpecialItemListener implements Listener {
         attacker.sendActionBar(Component.text("Excalibur struck with royal force.", NamedTextColor.GOLD));
     }
 
-    private void applyLochaber(ItemStack weapon, Player attacker, Player target) {
+    private void applyLochaber(ItemStack weapon, Player attacker, LivingEntity target) {
         UUID issueId = items.issueId(weapon).orElse(null);
         if (issueId == null) return;
 
