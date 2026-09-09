@@ -119,7 +119,7 @@ Latest release: **MiraItems v0.1.14**
 
 Direct JAR:
 
-https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.14/MiraItems-0.1.14.jar
+https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.15/MiraItems-0.1.15.jar
 
 Release page:
 
