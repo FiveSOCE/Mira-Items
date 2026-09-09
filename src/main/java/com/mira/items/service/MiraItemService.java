@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
+import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -43,6 +44,12 @@ public final class MiraItemService {
     private static final NamespacedKey EXCALIBUR_MODEL = new NamespacedKey("mira", "excalibur");
     private static final NamespacedKey LOCHABER_AXE_MODEL = new NamespacedKey("mira", "lochaber_axe");
     private static final NamespacedKey EMPOWER_MODEL = new NamespacedKey("mira", "empower");
+    private static final NamespacedKey DARK_RIDER_HELMET_MODEL = new NamespacedKey("mira", "dark_rider_helmet");
+    private static final NamespacedKey DARK_RIDER_CHESTPLATE_MODEL = new NamespacedKey("mira", "dark_rider_chestplate");
+    private static final NamespacedKey DARK_RIDER_LEGGINGS_MODEL = new NamespacedKey("mira", "dark_rider_leggings");
+    private static final NamespacedKey DARK_RIDER_BOOTS_MODEL = new NamespacedKey("mira", "dark_rider_boots");
+    private static final NamespacedKey DARK_RIDER_EQUIPMENT_MODEL = new NamespacedKey("mira", "dark_rider");
+    private static final NamespacedKey VANILLA_NETHERITE_EQUIPMENT_MODEL = new NamespacedKey("minecraft", "netherite");
     private static final NamespacedKey VOUCHER_RANK_MODEL = new NamespacedKey("mira", "voucher_rank");
     private static final NamespacedKey VOUCHER_PINATA_MODEL = new NamespacedKey("mira", "voucher_pinata");
     private static final NamespacedKey VOUCHER_AIRDROP_MODEL = new NamespacedKey("mira", "voucher_airdrop");
@@ -78,9 +85,8 @@ public final class MiraItemService {
             ItemMeta meta = item.getItemMeta();
             meta.displayName(Text.component(resolve(definition.displayName(), definition, record.ownerName(), record.date())));
             meta.lore(expectedLore(definition, record.ownerName(), record.date()));
-        applyCanonicalModel(meta, definition);
             definition.enchants().forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
-            applyCanonicalModel(meta, definition);
+            applyCanonicalVisuals(meta, definition);
             if (definition.ability(MiraAbility.EMPOWER)) {
                 if (!(meta instanceof MusicInstrumentMeta instrumentMeta)) throw new IllegalStateException("GOAT_HORN did not expose MusicInstrumentMeta");
                 instrumentMeta.setInstrument(MusicInstrument.YEARN_GOAT_HORN);
@@ -167,11 +173,22 @@ public final class MiraItemService {
 
         // Item models are derived from the authenticated MiraItem identity, not trusted as identity themselves.
         // This also transparently migrates legitimate pre-resource-pack Pyro Axes when they are first seen.
+        boolean visualChanged = false;
         NamespacedKey expectedModel = modelKey(definition);
         if (expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
             meta.setItemModel(expectedModel);
-            item.setItemMeta(meta);
+            visualChanged = true;
         }
+        NamespacedKey expectedEquipment = equipmentModelKey(definition);
+        if (expectedEquipment != null) {
+            EquippableComponent equippable = meta.getEquippable();
+            if (!expectedEquipment.equals(equippable.getModel())) {
+                equippable.setModel(expectedEquipment);
+                meta.setEquippable(equippable);
+                visualChanged = true;
+            }
+        }
+        if (visualChanged) item.setItemMeta(meta);
         return Optional.of(definition);
     }
 
@@ -238,6 +255,7 @@ public final class MiraItemService {
             pdc.remove(renameSignatureKey);
         }
         meta.lore(expectedLore(definition, record.ownerName(), record.date()));
+        applyCanonicalVisuals(meta, definition);
         pdc.set(itemIdKey, PersistentDataType.STRING, definition.id());
         pdc.set(issueIdKey, PersistentDataType.STRING, issueId.toString());
         pdc.set(ownerUuidKey, PersistentDataType.STRING, record.ownerId().toString());
@@ -292,9 +310,8 @@ public final class MiraItemService {
             // This keeps legacy/existing vouchers and weapons visually migrated even when
             // their normal gameplay path has not touched them yet.
             ItemMeta meta = item.getItemMeta();
-            NamespacedKey expectedModel = modelKey(definition.get());
-            if (meta != null && expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
-                meta.setItemModel(expectedModel);
+            if (meta != null) {
+                applyCanonicalVisuals(meta, definition.get());
                 item.setItemMeta(meta);
             }
         }
@@ -305,10 +322,16 @@ public final class MiraItemService {
         if (item == null || item.getType().isAir() || !item.hasItemMeta()) return;
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        String backedItemId = pdc.get(itemIdKey, PersistentDataType.STRING);
         pdc.remove(itemIdKey); pdc.remove(issueIdKey); pdc.remove(ownerUuidKey); pdc.remove(ownerNameKey); pdc.remove(issuedDateKey); pdc.remove(signatureKey);
         pdc.remove(renameValueKey); pdc.remove(renameSignatureKey);
         NamespacedKey itemModel = meta.getItemModel();
         if (itemModel != null && itemModel.getNamespace().equals("mira")) meta.setItemModel(null);
+        if (backedItemId != null && backedItemId.startsWith("dark_rider_")) {
+            EquippableComponent equippable = meta.getEquippable();
+            equippable.setModel(VANILLA_NETHERITE_EQUIPMENT_MODEL);
+            meta.setEquippable(equippable);
+        }
         item.setItemMeta(meta);
     }
 
@@ -318,6 +341,10 @@ public final class MiraItemService {
         if (id.equals("excalibur")) return EXCALIBUR_MODEL;
         if (id.equals("lochaber_axe")) return LOCHABER_AXE_MODEL;
         if (id.equals("empower")) return EMPOWER_MODEL;
+        if (id.equals("dark_rider_helmet")) return DARK_RIDER_HELMET_MODEL;
+        if (id.equals("dark_rider_chestplate")) return DARK_RIDER_CHESTPLATE_MODEL;
+        if (id.equals("dark_rider_leggings")) return DARK_RIDER_LEGGINGS_MODEL;
+        if (id.equals("dark_rider_boots")) return DARK_RIDER_BOOTS_MODEL;
         if (id.startsWith("voucher_rank_")) return VOUCHER_RANK_MODEL;
         if (id.startsWith("voucher_kit_")) return VOUCHER_TEMP_KIT_MODEL;
         if (id.startsWith("voucher_home_")) return VOUCHER_HOME_MODEL;
@@ -328,9 +355,20 @@ public final class MiraItemService {
         return null;
     }
 
-    private void applyCanonicalModel(ItemMeta meta, MiraItemDefinition definition) {
+    private NamespacedKey equipmentModelKey(MiraItemDefinition definition) {
+        return definition.ability(MiraAbility.DARK_RIDER) ? DARK_RIDER_EQUIPMENT_MODEL : null;
+    }
+
+    private void applyCanonicalVisuals(ItemMeta meta, MiraItemDefinition definition) {
         NamespacedKey model = modelKey(definition);
         if (model != null) meta.setItemModel(model);
+
+        NamespacedKey equipment = equipmentModelKey(definition);
+        if (equipment != null) {
+            EquippableComponent equippable = meta.getEquippable();
+            equippable.setModel(equipment);
+            meta.setEquippable(equippable);
+        }
     }
 
     private List<Component> expectedLore(MiraItemDefinition definition, String ownerName, String date) {
