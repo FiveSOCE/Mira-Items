@@ -8,6 +8,7 @@ import com.mira.items.command.MiraItemCommand;
 import com.mira.items.listener.SpecialItemListener;
 import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
+import com.mira.items.service.DarkRiderSetService;
 import com.mira.items.service.MiraItemService;
 import com.mira.items.service.UtilityTokenService;
 import com.mira.items.service.VoucherService;
@@ -26,6 +27,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
     private MiraItemsApi api;
     private UtilityTokenService utilityTokens;
     private VoucherService vouchers;
+    private DarkRiderSetService darkRider;
     private BukkitTask maintenanceTask;
 
     @Override
@@ -38,6 +40,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
         items = new MiraItemService(this, state, registry);
         utilityTokens = new UtilityTokenService(this, core, items);
         vouchers = new VoucherService(this, items, state);
+        darkRider = new DarkRiderSetService(this, core, items, state);
         api = new MiraItemsApiImpl(items, state, registry, abilities);
 
         core.modules().register(this, "MiraItems");
@@ -65,10 +68,11 @@ public final class MiraItemsPlugin extends JavaPlugin {
         maintenanceTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
             registry.cleanupExpired();
             listener.maintenance();
+            darkRider.maintenance();
         }, 20L, 20L);
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
-                "Custom item/ability registries, event windows, Core cooldowns, verification tools and PAPI displays ready");
+                "Custom item/ability registries, event windows, Core cooldowns, Dark Rider set bonuses, verification tools and PAPI displays ready");
         getLogger().info("MiraItems v" + getPluginMeta().getVersion() + " enabled.");
     }
 

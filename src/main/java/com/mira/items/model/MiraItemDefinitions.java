@@ -27,6 +27,23 @@ public final class MiraItemDefinitions {
         register(new MiraItemDefinition("empower", "&1Empower!", List.of("empower", "empower!"),
                 List.of("&9Empower Thy Ally!", "&f"), Material.GOAT_HORN,
                 Map.of(Enchantment.UNBREAKING, 10), 10, MiraAbility.EMPOWER.name()));
+
+        register(new MiraItemDefinition("dark_rider_helmet", "&0[&4Dark Rider&0] &2Helmet",
+                List.of("darkriderhelmet", "dark_rider_helmet", "drhelmet"),
+                List.of("&6Dig The Grave"), Material.NETHERITE_HELMET,
+                Map.of(), -1, MiraAbility.DARK_RIDER.name()));
+        register(new MiraItemDefinition("dark_rider_chestplate", "&0[&4Dark Rider&0] &2Chestplate",
+                List.of("darkriderchestplate", "dark_rider_chestplate", "drchestplate"),
+                List.of("&6Dig The Grave"), Material.NETHERITE_CHESTPLATE,
+                Map.of(), -1, MiraAbility.DARK_RIDER.name()));
+        register(new MiraItemDefinition("dark_rider_leggings", "&0[&4Dark Rider&0] &2Leggings",
+                List.of("darkriderleggings", "dark_rider_leggings", "drleggings"),
+                List.of("&6Dig The Grave"), Material.NETHERITE_LEGGINGS,
+                Map.of(), -1, MiraAbility.DARK_RIDER.name()));
+        register(new MiraItemDefinition("dark_rider_boots", "&0[&4Dark Rider&0] &2Boots",
+                List.of("darkriderboots", "dark_rider_boots", "drboots"),
+                List.of("&6Dig The Grave"), Material.NETHERITE_BOOTS,
+                Map.of(), -1, MiraAbility.DARK_RIDER.name()));
     }
 
     private MiraItemDefinitions() { }

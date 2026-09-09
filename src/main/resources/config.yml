@@ -11,6 +11,9 @@ mechanics:
   lochaber-fatigue-duration-ticks: 60
   empower-duration-ticks: 600
   empower-cooldown-ticks: 6000
+  dark-rider-luck-level: 10
+  dark-rider-luck-refresh-ticks: 60
+  dark-rider-repair-cooldown-seconds: 300
 
 integrity:
   scan-interval-ticks: 40

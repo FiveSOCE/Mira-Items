@@ -5,5 +5,6 @@ public enum MiraAbility {
     PYRO,
     EXCALIBUR,
     LOCHABER,
-    EMPOWER
+    EMPOWER,
+    DARK_RIDER
 }
