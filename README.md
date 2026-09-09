@@ -1,10 +1,24 @@
+## v0.1.19 short /mi reward names
+
+The canonical grant command now hides internal `voucher_` IDs.
+
+Examples:
+
+- `/mi <player> jellylegs`
+- `/mi <player> hermes`
+- `/mi <player> starter`
+- `/mi <player> airdrop`
+- `/mi <player> pyro_axe`
+
+If a short name is ambiguous, use the explicit dotted form such as `Rank.Hermes`, `Tag.Reaper`, or `Kit.Starter`.
+
 # MiraItems
 
 ## Download
 
-**Latest compatibility release: v0.1.18**
+**Latest compatibility release: v0.1.19**
 
-[**Download MiraItems-0.1.18.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.18/MiraItems-0.1.18.jar)
+[**Download MiraItems-0.1.19.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.19/MiraItems-0.1.19.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Items/releases)
 
