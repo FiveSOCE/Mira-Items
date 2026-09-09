@@ -51,6 +51,12 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof org.bukkit.command.ConsoleCommandSender)
+                && !sender.hasPermission("miraitems.admin")) {
+            error(sender, "You do not have permission to use MiraItems.");
+            return true;
+        }
+
         if (args.length >= 2
                 && !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
             tebexGive(sender, args);
