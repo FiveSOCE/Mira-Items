@@ -40,6 +40,16 @@ public final class MiraItemService {
     private final NamespacedKey renameValueKey;
     private final NamespacedKey renameSignatureKey;
     private static final NamespacedKey PYRO_AXE_MODEL = new NamespacedKey("mira", "pyro_axe");
+    private static final NamespacedKey EXCALIBUR_MODEL = new NamespacedKey("mira", "excalibur");
+    private static final NamespacedKey LOCHABER_AXE_MODEL = new NamespacedKey("mira", "lochaber_axe");
+    private static final NamespacedKey EMPOWER_MODEL = new NamespacedKey("mira", "empower");
+    private static final NamespacedKey VOUCHER_RANK_MODEL = new NamespacedKey("mira", "voucher_rank");
+    private static final NamespacedKey VOUCHER_PINATA_MODEL = new NamespacedKey("mira", "voucher_pinata");
+    private static final NamespacedKey VOUCHER_AIRDROP_MODEL = new NamespacedKey("mira", "voucher_airdrop");
+    private static final NamespacedKey VOUCHER_HOME_MODEL = new NamespacedKey("mira", "voucher_home_upgrade");
+    private static final NamespacedKey VOUCHER_JELLYLEGS_MODEL = new NamespacedKey("mira", "voucher_jellylegs");
+    private static final NamespacedKey VOUCHER_FLY_MODEL = new NamespacedKey("mira", "voucher_fly");
+    private static final NamespacedKey VOUCHER_TEMP_KIT_MODEL = new NamespacedKey("mira", "voucher_temp_kit");
     private final String secret;
 
     public MiraItemService(MiraItemsPlugin plugin, ItemStateStore state, CustomItemRegistryService registry) {
@@ -287,7 +297,19 @@ public final class MiraItemService {
     }
 
     private NamespacedKey modelKey(MiraItemDefinition definition) {
-        return definition.id().equalsIgnoreCase("pyro_axe") ? PYRO_AXE_MODEL : null;
+        String id = definition.id().toLowerCase(java.util.Locale.ROOT);
+        if (id.equals("pyro_axe")) return PYRO_AXE_MODEL;
+        if (id.equals("excalibur")) return EXCALIBUR_MODEL;
+        if (id.equals("lochaber_axe")) return LOCHABER_AXE_MODEL;
+        if (id.equals("empower")) return EMPOWER_MODEL;
+        if (id.startsWith("voucher_rank_")) return VOUCHER_RANK_MODEL;
+        if (id.startsWith("voucher_kit_")) return VOUCHER_TEMP_KIT_MODEL;
+        if (id.startsWith("voucher_home_")) return VOUCHER_HOME_MODEL;
+        if (id.equals("voucher_jellylegs")) return VOUCHER_JELLYLEGS_MODEL;
+        if (id.equals("voucher_fly")) return VOUCHER_FLY_MODEL;
+        if (id.equals("voucher_airdrop")) return VOUCHER_AIRDROP_MODEL;
+        if (id.equals("voucher_pinata")) return VOUCHER_PINATA_MODEL;
+        return null;
     }
 
     private void applyCanonicalModel(ItemMeta meta, MiraItemDefinition definition) {
