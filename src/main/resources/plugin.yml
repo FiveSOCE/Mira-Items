@@ -1,5 +1,5 @@
 name: MiraItems
-version: 0.1.16
+version: 0.1.17
 main: com.mira.items.MiraItemsPlugin
 api-version: '1.21'
 authors: [FiveS]
@@ -8,10 +8,10 @@ depend: [MiraCore]
 softdepend: [MiraEnchantments, PlaceholderAPI, LuckPerms, Essentials, MiraKits, MiraTags, MiraAirdrops, MiraPinata]
 
 commands:
-  mitem:
-    description: MiraItems administration and diagnostics.
-    usage: /mitem <give|token|disable|enable|check|inspect|verify|migrate|reset|addlimit|removelimit|status|test|help>
-    aliases: [miraitem, miraitems, mi]
+  mi:
+    description: MiraItems issuance, administration and diagnostics.
+    usage: /mi <player> <reward>
+    aliases: [mitem, miraitem, miraitems]
     permission: miraitems.admin
 
 permissions:
