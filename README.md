@@ -1,3 +1,19 @@
+## v0.1.17 canonical /mi issuance
+
+`/mi` is now the primary MiraItems command.
+
+Standard issuance syntax for console, Tebex and staff:
+
+- `/mi <player> Rank.Hermes`
+- `/mi <player> Tag.Reaper`
+- `/mi <player> Kit.Starter`
+- `/mi <player> pyro_axe`
+- `/mi <player> Excalibur`
+
+The parser first resolves an exact MiraItem ID/friendly name, then maps dotted store rewards such as `Rank.Hermes` to `voucher_rank_hermes`.
+
+Legacy command names `/mitem`, `/miraitem` and `/miraitems` remain aliases so existing automation does not break, but new integrations should use `/mi <player> <reward>`.
+
 ## v0.1.16 Tebex-friendly grants
 
 MiraItems now supports a short console-safe store syntax:
@@ -125,15 +141,15 @@ MiraItems is the scarce tracked-special-item system for the Mira Paper server su
 
 ## Download
 
-Latest release: **MiraItems v0.1.16**
+Latest release: **MiraItems v0.1.17**
 
 Direct JAR:
 
-https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.16/MiraItems-0.1.16.jar
+https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.17/MiraItems-0.1.17.jar
 
 Release page:
 
-https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.16
+https://github.com/FiveSOCE/Mira-Items/releases/tag/v0.1.17
 ## Requirements / Dependencies
 
 - Paper 1.21.11
