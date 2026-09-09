@@ -51,7 +51,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length >= 2 && label.equalsIgnoreCase("mi")
+        if (args.length >= 2
                 && !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
             tebexGive(sender, args);
             return true;
@@ -126,7 +126,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         String reward = join(args, 1);
         MiraItemDefinition definition = resolveStoreReward(reward).orElse(null);
         if (definition == null) {
-            error(sender, "Unknown MiraItem/store reward '" + reward + "'.");
+            error(sender, "Unknown reward '" + reward + "'. Use /mi <player> <item|Family.Reward>.");
             return;
         }
 
@@ -314,9 +314,9 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     private void help(CommandSender sender) {
         send(sender, "&dMiraItems commands");
-        send(sender, "&7/mitem give <item>");
-        send(sender, "&7/mitem give <player> <item>");
-        send(sender, "&7/mi <player> <Family.Reward> &8(Tebex/console friendly)");
+        send(sender, "&f/mi <player> <reward> &8- primary issuance command");
+        send(sender, "&7Examples: /mi Steve Rank.Hermes | /mi Steve pyro_axe");
+        send(sender, "&8Legacy: /mitem give <player> <item>");
         send(sender, "&7/mitem token <repair|rename> <player> [amount]");
         send(sender, "&7/mitem disable <item> | /mitem enable <item>");
         send(sender, "&7/mitem check <item> | /mitem reset <item>");
@@ -331,16 +331,17 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1 && alias.equalsIgnoreCase("mi")) {
+        if (args.length == 1) {
             List<String> values = new ArrayList<>(SUBCOMMANDS);
             Bukkit.getOnlinePlayers().forEach(player -> values.add(player.getName()));
             return matching(values, args[0]);
         }
-        if (args.length == 1) return matching(SUBCOMMANDS, args[0]);
-        if (alias.equalsIgnoreCase("mi") && args.length == 2
+        if (args.length == 2
                 && Bukkit.getPlayerExact(args[0]) != null
                 && !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
-            return matching(List.of("Rank.", "Tag.", "Kit."), args[1]);
+            List<String> rewards = new ArrayList<>(itemIds());
+            rewards.addAll(List.of("Rank.", "Tag.", "Kit."));
+            return matching(rewards, args[1]);
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2 && sub.equals("token")) return matching(List.of("repair", "rename"), args[1]);
