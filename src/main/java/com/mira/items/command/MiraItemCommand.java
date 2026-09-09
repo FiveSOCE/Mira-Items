@@ -51,6 +51,11 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 2 && label.equalsIgnoreCase("mi")
+                && !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
+            tebexGive(sender, args);
+            return true;
+        }
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) { help(sender); return true; }
         String sub = args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
@@ -109,6 +114,44 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
                 target.getUniqueId().toString(), "Utility token granted",
                 java.util.Map.of("type", type.name(), "amount", Integer.toString(amount),
                         "targetName", target.getName()));
+    }
+
+    private void tebexGive(CommandSender sender, String[] args) {
+        Player target = Bukkit.getPlayerExact(args[0]);
+        if (target == null) {
+            error(sender, "Player '" + args[0] + "' is not online.");
+            return;
+        }
+
+        String reward = join(args, 1);
+        MiraItemDefinition definition = resolveStoreReward(reward).orElse(null);
+        if (definition == null) {
+            error(sender, "Unknown MiraItem/store reward '" + reward + "'.");
+            return;
+        }
+
+        issueTo(sender, target, definition);
+    }
+
+    private Optional<MiraItemDefinition> resolveStoreReward(String input) {
+        Optional<MiraItemDefinition> direct = resolve(input);
+        if (direct.isPresent()) return direct;
+
+        String value = input == null ? "" : input.trim();
+        int dot = value.indexOf('.');
+        if (dot <= 0 || dot == value.length() - 1) return Optional.empty();
+
+        String family = slug(value.substring(0, dot));
+        String reward = slug(value.substring(dot + 1));
+        if (family.isBlank() || reward.isBlank()) return Optional.empty();
+
+        return resolve("voucher_" + family + "_" + reward);
+    }
+
+    private String slug(String value) {
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("^_+|_+$", "");
     }
 
     private void give(CommandSender sender, String[] args) {
@@ -273,6 +316,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         send(sender, "&dMiraItems commands");
         send(sender, "&7/mitem give <item>");
         send(sender, "&7/mitem give <player> <item>");
+        send(sender, "&7/mi <player> <Family.Reward> &8(Tebex/console friendly)");
         send(sender, "&7/mitem token <repair|rename> <player> [amount]");
         send(sender, "&7/mitem disable <item> | /mitem enable <item>");
         send(sender, "&7/mitem check <item> | /mitem reset <item>");
@@ -287,7 +331,17 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1 && alias.equalsIgnoreCase("mi")) {
+            List<String> values = new ArrayList<>(SUBCOMMANDS);
+            Bukkit.getOnlinePlayers().forEach(player -> values.add(player.getName()));
+            return matching(values, args[0]);
+        }
         if (args.length == 1) return matching(SUBCOMMANDS, args[0]);
+        if (alias.equalsIgnoreCase("mi") && args.length == 2
+                && Bukkit.getPlayerExact(args[0]) != null
+                && !SUBCOMMANDS.contains(args[0].toLowerCase(Locale.ROOT))) {
+            return matching(List.of("Rank.", "Tag.", "Kit."), args[1]);
+        }
         String sub = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2 && sub.equals("token")) return matching(List.of("repair", "rename"), args[1]);
         if (args.length == 3 && sub.equals("token")) {
