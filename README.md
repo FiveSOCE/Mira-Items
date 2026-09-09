@@ -1,3 +1,20 @@
+## v0.1.20 custom item visuals
+
+Permanent resource-pack model keys are now assigned only to authenticated MiraItems:
+
+- Excalibur → `mira:excalibur`
+- Lochaber Axe → `mira:lochaber_axe`
+- Empower! → `mira:empower`
+- rank vouchers → `mira:voucher_rank`
+- Pinata Call voucher → `mira:voucher_pinata`
+- Airdrop Call voucher → `mira:voucher_airdrop`
+- Home Upgrade vouchers → `mira:voucher_home_upgrade`
+- Jelly Legs voucher → `mira:voucher_jellylegs`
+- Permanent Fly voucher → `mira:voucher_fly`
+- temporary kit vouchers → `mira:voucher_temp_kit`
+
+Vanilla base items keep their normal textures.
+
 ## v0.1.19 short /mi reward names
 
 The canonical grant command now hides internal `voucher_` IDs.
@@ -16,9 +33,9 @@ If a short name is ambiguous, use the explicit dotted form such as `Rank.Hermes`
 
 ## Download
 
-**Latest compatibility release: v0.1.19**
+**Latest compatibility release: v0.1.20**
 
-[**Download MiraItems-0.1.19.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.19/MiraItems-0.1.19.jar)
+[**Download MiraItems-0.1.20.jar**](https://github.com/FiveSOCE/Mira-Items/releases/download/v0.1.20/MiraItems-0.1.20.jar)
 
 [View all releases](https://github.com/FiveSOCE/Mira-Items/releases)
 
