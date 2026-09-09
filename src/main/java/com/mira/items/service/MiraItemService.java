@@ -281,7 +281,23 @@ public final class MiraItemService {
 
     public int sanitizeInventory(Player player) {
         int invalidated = 0;
-        for (ItemStack item : player.getInventory().getContents()) if (claimed(item) && identify(item).isEmpty()) invalidated++;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (!claimed(item)) continue;
+            Optional<MiraItemDefinition> definition = identify(item);
+            if (definition.isEmpty()) {
+                invalidated++;
+                continue;
+            }
+            // Always enforce the canonical resource-pack model for every valid claimed item.
+            // This keeps legacy/existing vouchers and weapons visually migrated even when
+            // their normal gameplay path has not touched them yet.
+            ItemMeta meta = item.getItemMeta();
+            NamespacedKey expectedModel = modelKey(definition.get());
+            if (meta != null && expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
+                meta.setItemModel(expectedModel);
+                item.setItemMeta(meta);
+            }
+        }
         return invalidated;
     }
 
