@@ -49,9 +49,9 @@ public final class MiraItemsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(vouchers, this);
         Bukkit.getScheduler().runTask(this, vouchers::refreshDefinitions);
 
-        PluginCommand command = getCommand("mitem");
+        PluginCommand command = getCommand("mi");
         if (command == null) {
-            core.modules().setHealth(this, ModuleHealth.UNHEALTHY, "MiraItems command missing from plugin.yml");
+            core.modules().setHealth(this, ModuleHealth.UNHEALTHY, "MiraItems /mi command missing from plugin.yml");
             throw new IllegalStateException("MiraItems command missing from plugin.yml");
         }
         MiraItemCommand admin = new MiraItemCommand(this, core, items, state, registry, abilities, utilityTokens);
