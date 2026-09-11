@@ -5,6 +5,7 @@ import com.mira.core.api.MiraCoreProvider;
 import com.mira.core.api.ModuleHealth;
 import com.mira.items.api.MiraItemsApi;
 import com.mira.items.command.MiraItemCommand;
+import com.mira.items.listener.InstantKitVoucherListener;
 import com.mira.items.listener.SpecialItemListener;
 import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
@@ -49,6 +50,9 @@ public final class MiraItemsPlugin extends JavaPlugin {
         SpecialItemListener listener = new SpecialItemListener(this, core, items, state, abilities);
         getServer().getPluginManager().registerEvents(listener, this);
         getServer().getPluginManager().registerEvents(utilityTokens, this);
+        // Runs before the generic voucher service and uses MiraKits' direct delivery path.
+        // Older MiraKits builds fall through to the existing console-command voucher path.
+        getServer().getPluginManager().registerEvents(new InstantKitVoucherListener(this, items, state), this);
         getServer().getPluginManager().registerEvents(vouchers, this);
         Bukkit.getScheduler().runTask(this, vouchers::refreshDefinitions);
 
