@@ -10,6 +10,7 @@ import com.mira.items.listener.SpecialItemListener;
 import com.mira.items.service.AbilityRegistryService;
 import com.mira.items.service.CustomItemRegistryService;
 import com.mira.items.service.DarkRiderSetService;
+import com.mira.items.service.FixVoucherService;
 import com.mira.items.service.MiraItemService;
 import com.mira.items.service.UtilityTokenService;
 import com.mira.items.service.VoucherService;
@@ -53,6 +54,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
         // Runs before the generic voucher service and uses MiraKits' direct delivery path.
         // Older MiraKits builds fall through to the existing console-command voucher path.
         getServer().getPluginManager().registerEvents(new InstantKitVoucherListener(this, items, state), this);
+        getServer().getPluginManager().registerEvents(new FixVoucherService(this, items, state), this);
         getServer().getPluginManager().registerEvents(vouchers, this);
         Bukkit.getScheduler().runTask(this, vouchers::refreshDefinitions);
 
