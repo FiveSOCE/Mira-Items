@@ -28,7 +28,6 @@ mythic-armors:
 integrity:
   scan-interval-ticks: 40
 
-
 vouchers:
   ranks:
     # Groups containing any of these names never receive rank vouchers.
@@ -52,3 +51,5 @@ vouchers:
     # Used only if the matching command does not expose a Bukkit permission.
     jellylegs: "jellylegs.use"
     fly: "essentials.fly"
+    fix-hand: "miracore.fix.hand"
+    fix-all: "miracore.fix.all"
