@@ -44,6 +44,15 @@ public final class MiraItemDefinitions {
                 List.of("darkriderboots", "dark_rider_boots", "drboots"),
                 List.of("&6Dig The Grave"), Material.NETHERITE_BOOTS,
                 Map.of(), -1, MiraAbility.DARK_RIDER.name()));
+
+        register(new MiraItemDefinition("voucher_fix_hand", "&6&lFix Hand Voucher",
+                List.of("fixhandvoucher", "fix_hand_voucher", "fixhand"),
+                List.of("&7This voucher permanently unlocks &f/fix hand", "&eRight Click to receive"),
+                Material.PAPER, Map.of(), -1, "VOUCHER"));
+        register(new MiraItemDefinition("voucher_fix_all", "&d&lFix All Voucher",
+                List.of("fixallvoucher", "fix_all_voucher", "fixall"),
+                List.of("&7This voucher permanently unlocks &f/fix all", "&eRight Click to receive"),
+                Material.PAPER, Map.of(), -1, "VOUCHER"));
     }
 
     private MiraItemDefinitions() { }
