@@ -1,5 +1,5 @@
 name: MiraItems
-version: 0.1.26
+version: 0.1.28
 main: com.mira.items.MiraItemsPlugin
 api-version: '1.21'
 authors: [FiveS]
@@ -10,7 +10,7 @@ softdepend: [MiraEnchantments, PlaceholderAPI, LuckPerms, Essentials, MiraKits, 
 commands:
   mi:
     description: MiraItems issuance, administration and diagnostics.
-    usage: /mi <player> <reward>
+    usage: /mi <player> <reward> OR /mi applyitem <item>
     aliases: [mitem, miraitem, miraitems]
     permission: miraitems.admin
     permission-message: "You do not have permission to use MiraItems."
