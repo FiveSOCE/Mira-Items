@@ -26,7 +26,7 @@ import java.util.UUID;
 
 public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     private static final List<String> SUBCOMMANDS = List.of(
-            "give", "token", "disable", "enable", "check", "inspect", "verify", "migrate", "reset", "addlimit", "removelimit", "status", "test", "help"
+            "give", "applyitem", "token", "disable", "enable", "check", "inspect", "verify", "migrate", "reset", "addlimit", "removelimit", "status", "test", "help"
     );
 
     private final MiraItemsPlugin plugin;
@@ -66,6 +66,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         String sub = args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "give" -> give(sender, args);
+            case "applyitem" -> applyItem(sender, args);
             case "token" -> token(sender, args);
             case "disable" -> setEnabled(sender, args, false);
             case "enable" -> setEnabled(sender, args, true);
@@ -196,6 +197,64 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         issueTo(sender, target, definition);
     }
 
+    private void applyItem(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            error(sender, "/mi applyitem must be run by a player holding the item to transform.");
+            return;
+        }
+        if (args.length < 2) {
+            error(sender, "Usage: /mi applyitem <item>");
+            return;
+        }
+
+        MiraItemDefinition definition = resolve(join(args, 1)).orElse(null);
+        if (definition == null) {
+            error(sender, "Unknown MiraItem. Use tab-complete or /mi status to view registered items.");
+            return;
+        }
+        if (definition.abilityId() == null
+                || definition.abilityId().equalsIgnoreCase("NONE")
+                || definition.abilityId().equalsIgnoreCase("VOUCHER")) {
+            error(sender, definitionName(definition) + " does not expose an item ability that can be applied.");
+            return;
+        }
+        if (!state.enabled(definition.id())) {
+            error(sender, definitionName(definition) + " is disabled.");
+            return;
+        }
+        if (!state.canIssue(definition.id())) {
+            error(sender, definitionName(definition) + " is at its issuance limit ("
+                    + state.issuedCount(definition.id()) + "/" + state.limit(definition.id()) + ").");
+            return;
+        }
+
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (held == null || held.getType().isAir()) {
+            error(sender, "Hold the item you want to apply the MiraItem mechanics to.");
+            return;
+        }
+        if (held.getAmount() != 1) {
+            error(sender, "The held stack must contain exactly one item before applying MiraItem mechanics.");
+            return;
+        }
+        if (items.claimed(held)) {
+            error(sender, "The held item already has MiraItem backing. Use a clean item instead.");
+            return;
+        }
+
+        if (!items.applyEffects(player, held, definition)) {
+            error(sender, "Could not apply " + definitionName(definition) + " mechanics to the held item.");
+            return;
+        }
+        player.getInventory().setItemInMainHand(held);
+        player.updateInventory();
+        success(sender, "Applied " + definitionName(definition)
+                + " mechanics to the held item. Material, name, lore, enchants and visuals were preserved.");
+        core.audit().record("MiraItems", "ITEM_EFFECTS_APPLIED", player.getUniqueId(), player.getName(),
+                player.getUniqueId().toString(), "MiraItem effects applied to held item",
+                java.util.Map.of("itemId", definition.id(), "material", held.getType().name()));
+    }
+
     private void issueTo(CommandSender sender, Player target, MiraItemDefinition definition) {
         if (!state.enabled(definition.id())) { error(sender, definitionName(definition) + " is disabled."); return; }
         if (!state.canIssue(definition.id())) {
@@ -236,6 +295,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         if (!inspection.claimed()) { error(sender, "The held item is not a MiraItem."); return; }
         send(sender, "&dMiraItem Inspection");
         send(sender, "&7ID: &f" + inspection.itemId() + " &7| Ability: &f" + inspection.abilityId());
+        send(sender, "&7Effects-only overlay: " + (items.isEffectOverlay(held) ? "&aYES" : "&fNO"));
         send(sender, "&7Issue: &f" + (inspection.issueId() == null ? "Missing" : inspection.issueId()));
         send(sender, "&7Owner: &f" + inspection.ownerName() + " &8(" + inspection.ownerUuid() + ")");
         send(sender, "&7Issued: &f" + inspection.issuedDate());
@@ -262,7 +322,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         if (!(sender instanceof Player player)) { error(sender, "/mitem migrate must be run by a player holding an item."); return; }
         ItemStack held = player.getInventory().getItemInMainHand();
         if (!items.migrateCanonical(held)) {
-            error(sender, "Migration refused. Only already-valid, issuance-backed MiraItems can be re-signed/canonicalized.");
+            error(sender, "Migration refused. Only already-valid canonical MiraItems can be re-signed/canonicalized; effect overlays keep their original visuals.");
             return;
         }
         player.getInventory().setItemInMainHand(held);
@@ -344,6 +404,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
         send(sender, "&dMiraItems commands");
         send(sender, "&f/mi <player> <reward> &8- primary issuance command");
         send(sender, "&7Examples: /mi Steve Rank.Hermes | /mi Steve pyro_axe");
+        send(sender, "&7/mi applyitem <item> &8- apply Mira mechanics to the held item without changing its visuals");
         send(sender, "&8Legacy: /mitem give <player> <item>");
         send(sender, "&7/mitem token <repair|rename> <player> [amount]");
         send(sender, "&7/mitem disable <item> | /mitem enable <item>");
@@ -372,6 +433,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
             return matching(rewards, args[1]);
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
+        if (args.length == 2 && sub.equals("applyitem")) return matching(effectItemIds(), args[1]);
         if (args.length == 2 && sub.equals("token")) return matching(List.of("repair", "rename"), args[1]);
         if (args.length == 3 && sub.equals("token")) {
             return matching(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[2]);
@@ -389,6 +451,16 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
 
     private List<String> itemIds() { return MiraItemDefinitions.all().stream().map(MiraItemDefinition::id).toList(); }
 
+    private List<String> effectItemIds() {
+        return MiraItemDefinitions.all().stream()
+                .filter(definition -> definition.abilityId() != null
+                        && !definition.abilityId().equalsIgnoreCase("NONE")
+                        && !definition.abilityId().equalsIgnoreCase("VOUCHER"))
+                .map(MiraItemDefinition::id)
+                .sorted()
+                .toList();
+    }
+
     private List<String> grantNames() {
         return MiraItemDefinitions.all().stream()
                 .map(definition -> {
@@ -403,6 +475,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
                 .sorted()
                 .toList();
     }
+
     private List<String> matching(List<String> values, String input) {
         String lower = input.toLowerCase(Locale.ROOT);
         return values.stream().filter(value -> value.toLowerCase(Locale.ROOT).startsWith(lower)).sorted().toList();
