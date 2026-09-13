@@ -41,6 +41,8 @@ public final class MiraItemService {
     private final NamespacedKey signatureKey;
     private final NamespacedKey renameValueKey;
     private final NamespacedKey renameSignatureKey;
+    private final NamespacedKey effectOverlayKey;
+    private final NamespacedKey effectOverlaySignatureKey;
     private static final NamespacedKey PYRO_AXE_MODEL = new NamespacedKey("mira", "pyro_axe");
     private static final NamespacedKey EXCALIBUR_MODEL = new NamespacedKey("mira", "excalibur");
     private static final NamespacedKey LOCHABER_AXE_MODEL = new NamespacedKey("mira", "lochaber_axe");
@@ -71,6 +73,8 @@ public final class MiraItemService {
         this.signatureKey = new NamespacedKey(plugin, "signature");
         this.renameValueKey = new NamespacedKey(plugin, "custom_name");
         this.renameSignatureKey = new NamespacedKey(plugin, "custom_name_signature");
+        this.effectOverlayKey = new NamespacedKey(plugin, "effect_overlay");
+        this.effectOverlaySignatureKey = new NamespacedKey(plugin, "effect_overlay_signature");
         this.secret = ensureSecret();
     }
 
@@ -113,6 +117,57 @@ public final class MiraItemService {
         return true;
     }
 
+    /**
+     * Applies only the authenticated MiraItem identity/ability layer to an existing item.
+     * Material, display name, lore, enchants, item model and all unrelated metadata remain untouched.
+     * The overlay still receives a normal issuance record and a second mode-specific signature.
+     */
+    public boolean applyEffects(Player owner, ItemStack target, MiraItemDefinition definition) {
+        if (owner == null || target == null || target.getType().isAir() || definition == null) return false;
+        if (target.getAmount() != 1 || claimed(target)) return false;
+        if (!registry.active(definition.id()) || !state.enabled(definition.id()) || !state.canIssue(definition.id())) return false;
+        if (definition.abilityId() == null
+                || definition.abilityId().equalsIgnoreCase("NONE")
+                || definition.abilityId().equalsIgnoreCase("VOUCHER")) return false;
+
+        String date = LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(
+                plugin.getConfig().getString("date-format", "dd/MM/yyyy")));
+        Optional<ItemStateStore.IssuedRecord> recordOptional = state.issue(definition, owner, date);
+        if (recordOptional.isEmpty()) return false;
+        ItemStateStore.IssuedRecord record = recordOptional.get();
+
+        try {
+            ItemMeta meta = target.getItemMeta();
+            if (meta == null) {
+                state.removeIssue(definition.id(), record.issueId());
+                return false;
+            }
+            PersistentDataContainer pdc = meta.getPersistentDataContainer();
+            pdc.set(itemIdKey, PersistentDataType.STRING, definition.id());
+            pdc.set(issueIdKey, PersistentDataType.STRING, record.issueId().toString());
+            pdc.set(ownerUuidKey, PersistentDataType.STRING, record.ownerId().toString());
+            pdc.set(ownerNameKey, PersistentDataType.STRING, record.ownerName());
+            pdc.set(issuedDateKey, PersistentDataType.STRING, record.date());
+            pdc.set(signatureKey, PersistentDataType.STRING,
+                    signature(definition.id(), record.issueId(), record.ownerId(), record.ownerName(), record.date()));
+            pdc.set(effectOverlayKey, PersistentDataType.BYTE, (byte) 1);
+            pdc.set(effectOverlaySignatureKey, PersistentDataType.STRING,
+                    effectOverlaySignature(definition.id(), record.issueId(), record.ownerId(), record.ownerName(), record.date()));
+            target.setItemMeta(meta);
+
+            if (identify(target, false).isEmpty()) {
+                state.removeIssue(definition.id(), record.issueId());
+                stripBacking(target);
+                return false;
+            }
+            return true;
+        } catch (RuntimeException error) {
+            state.removeIssue(definition.id(), record.issueId());
+            stripBacking(target);
+            throw error;
+        }
+    }
+
     public Optional<MiraItemDefinition> identify(ItemStack item) { return identify(item, true); }
 
     public Optional<MiraItemDefinition> identify(ItemStack item, boolean invalidateOnFailure) {
@@ -136,18 +191,38 @@ public final class MiraItemService {
         String ownerName = pdc.get(ownerNameKey, PersistentDataType.STRING);
         String date = pdc.get(issuedDateKey, PersistentDataType.STRING);
         String storedSignature = pdc.get(signatureKey, PersistentDataType.STRING);
-        boolean valid = item.getType() == definition.material() && issueText != null && ownerUuidText != null && ownerName != null && date != null && storedSignature != null;
-        UUID issueId = null; UUID ownerId = null;
+        Byte overlayMarker = pdc.get(effectOverlayKey, PersistentDataType.BYTE);
+        String overlaySignature = pdc.get(effectOverlaySignatureKey, PersistentDataType.STRING);
+        boolean overlay = overlayMarker != null;
+
+        boolean valid = issueText != null && ownerUuidText != null && ownerName != null && date != null && storedSignature != null;
+        if (!overlay) valid = valid && item.getType() == definition.material() && overlaySignature == null;
+        else valid = valid && overlayMarker == (byte) 1 && overlaySignature != null;
+
+        UUID issueId = null;
+        UUID ownerId = null;
         if (valid) {
-            try { issueId = UUID.fromString(issueText); ownerId = UUID.fromString(ownerUuidText); }
-            catch (IllegalArgumentException error) { valid = false; }
+            try {
+                issueId = UUID.fromString(issueText);
+                ownerId = UUID.fromString(ownerUuidText);
+            } catch (IllegalArgumentException error) {
+                valid = false;
+            }
         }
         if (valid) {
             ItemStateStore.IssuedRecord record = state.record(itemId, issueId).orElse(null);
-            valid = record != null && record.ownerId().equals(ownerId) && record.ownerName().equals(ownerName) && record.date().equals(date)
+            valid = record != null
+                    && record.ownerId().equals(ownerId)
+                    && record.ownerName().equals(ownerName)
+                    && record.date().equals(date)
                     && storedSignature.equals(signature(itemId, issueId, ownerId, ownerName, date));
         }
-        if (valid) {
+
+        if (valid && overlay) {
+            valid = overlaySignature.equals(effectOverlaySignature(itemId, issueId, ownerId, ownerName, date));
+        }
+
+        if (valid && !overlay) {
             String customName = pdc.get(renameValueKey, PersistentDataType.STRING);
             String customSignature = pdc.get(renameSignatureKey, PersistentDataType.STRING);
             Component expectedName;
@@ -162,44 +237,56 @@ public final class MiraItemService {
             valid = valid && meta.displayName() != null && meta.displayName().equals(expectedName)
                     && meta.lore() != null && meta.lore().equals(expectedLore(definition, ownerName, date));
         }
-        if (valid && definition.ability(MiraAbility.EMPOWER)) {
-            valid = meta instanceof MusicInstrumentMeta instrumentMeta && MusicInstrument.YEARN_GOAT_HORN.equals(instrumentMeta.getInstrument());
+        if (valid && !overlay && definition.ability(MiraAbility.EMPOWER)) {
+            valid = meta instanceof MusicInstrumentMeta instrumentMeta
+                    && MusicInstrument.YEARN_GOAT_HORN.equals(instrumentMeta.getInstrument());
         }
-        if (valid) valid = pdc.getKeys().stream().noneMatch(key -> key.getNamespace().equals("miraenchantments") && key.getKey().startsWith("enchant_"));
+        if (valid && !overlay) {
+            valid = pdc.getKeys().stream().noneMatch(key ->
+                    key.getNamespace().equals("miraenchantments") && key.getKey().startsWith("enchant_"));
+        }
         if (!valid) {
             if (invalidateOnFailure) stripBacking(item);
             return Optional.empty();
         }
 
-        // Item models are derived from the authenticated MiraItem identity, not trusted as identity themselves.
-        // This also transparently migrates legitimate pre-resource-pack Pyro Axes when they are first seen.
-        boolean visualChanged = false;
-        NamespacedKey expectedModel = modelKey(definition);
-        if (expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
-            meta.setItemModel(expectedModel);
-            visualChanged = true;
-        }
-        NamespacedKey expectedEquipment = equipmentModelKey(definition);
-        EquipmentSlot expectedSlot = armorSlot(definition.id());
-        if (expectedEquipment != null && expectedSlot != null) {
-            EquippableComponent equippable = meta.getEquippable();
-            if (!expectedEquipment.equals(equippable.getModel())
-                    || expectedSlot != equippable.getSlot()
-                    || !equippable.isSwappable()
-                    || !equippable.isDispensable()
-                    || !equippable.isDamageOnHurt()) {
-                configureDarkRiderEquippable(equippable, expectedEquipment, expectedSlot);
-                meta.setEquippable(equippable);
+        // Canonical issued MiraItems own their resource-pack visuals. Effect overlays explicitly do not:
+        // they preserve whatever model/material/name/lore the held item already had.
+        if (!overlay) {
+            boolean visualChanged = false;
+            NamespacedKey expectedModel = modelKey(definition);
+            if (expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
+                meta.setItemModel(expectedModel);
                 visualChanged = true;
             }
+            NamespacedKey expectedEquipment = equipmentModelKey(definition);
+            EquipmentSlot expectedSlot = armorSlot(definition.id());
+            if (expectedEquipment != null && expectedSlot != null) {
+                EquippableComponent equippable = meta.getEquippable();
+                if (!expectedEquipment.equals(equippable.getModel())
+                        || expectedSlot != equippable.getSlot()
+                        || !equippable.isSwappable()
+                        || !equippable.isDispensable()
+                        || !equippable.isDamageOnHurt()) {
+                    configureDarkRiderEquippable(equippable, expectedEquipment, expectedSlot);
+                    meta.setEquippable(equippable);
+                    visualChanged = true;
+                }
+            }
+            if (visualChanged) item.setItemMeta(meta);
         }
-        if (visualChanged) item.setItemMeta(meta);
         return Optional.of(definition);
     }
 
     public boolean claimed(ItemStack item) {
         return item != null && !item.getType().isAir() && item.hasItemMeta()
                 && item.getItemMeta().getPersistentDataContainer().has(itemIdKey, PersistentDataType.STRING);
+    }
+
+    public boolean isEffectOverlay(ItemStack item) {
+        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
+        Byte marker = item.getItemMeta().getPersistentDataContainer().get(effectOverlayKey, PersistentDataType.BYTE);
+        return marker != null && marker == (byte) 1;
     }
 
     public Optional<UUID> issueId(ItemStack item) {
@@ -236,9 +323,10 @@ public final class MiraItemService {
 
     /**
      * Refreshes canonical name/lore/signature for an already-valid issued item.
-     * Invalid or unbacked items are never repaired by this method.
+     * Effect overlays intentionally cannot be migrated into canonical visuals.
      */
     public boolean migrateCanonical(ItemStack item) {
+        if (isEffectOverlay(item)) return false;
         MiraItemDefinition definition = identify(item, false).orElse(null);
         if (definition == null) return false;
         UUID issueId = issueIdNonMutating(item).orElse(null);
@@ -311,9 +399,9 @@ public final class MiraItemService {
                 invalidated++;
                 continue;
             }
-            // Always enforce the canonical resource-pack model for every valid claimed item.
-            // This keeps legacy/existing vouchers and weapons visually migrated even when
-            // their normal gameplay path has not touched them yet.
+            if (isEffectOverlay(item)) continue;
+
+            // Canonical issued items keep their canonical resource-pack model.
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
                 applyCanonicalVisuals(meta, definition.get());
@@ -328,8 +416,25 @@ public final class MiraItemService {
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         String backedItemId = pdc.get(itemIdKey, PersistentDataType.STRING);
-        pdc.remove(itemIdKey); pdc.remove(issueIdKey); pdc.remove(ownerUuidKey); pdc.remove(ownerNameKey); pdc.remove(issuedDateKey); pdc.remove(signatureKey);
-        pdc.remove(renameValueKey); pdc.remove(renameSignatureKey);
+        boolean effectsOnly = pdc.has(effectOverlayKey, PersistentDataType.BYTE);
+
+        pdc.remove(itemIdKey);
+        pdc.remove(issueIdKey);
+        pdc.remove(ownerUuidKey);
+        pdc.remove(ownerNameKey);
+        pdc.remove(issuedDateKey);
+        pdc.remove(signatureKey);
+        pdc.remove(renameValueKey);
+        pdc.remove(renameSignatureKey);
+        pdc.remove(effectOverlayKey);
+        pdc.remove(effectOverlaySignatureKey);
+
+        // Effect overlays never own the item's visuals, so stripping backing must not touch them.
+        if (effectsOnly) {
+            item.setItemMeta(meta);
+            return;
+        }
+
         NamespacedKey itemModel = meta.getItemModel();
         if (itemModel != null && (itemModel.getNamespace().equals("mira") || itemModel.getNamespace().equals("mythicarmor"))) {
             meta.setItemModel(null);
@@ -452,7 +557,9 @@ public final class MiraItemService {
         String configured = plugin.getConfig().getString("security.secret", "").trim();
         if (!configured.isEmpty()) return configured;
         String generated = UUID.randomUUID() + "-" + UUID.randomUUID();
-        plugin.getConfig().set("security.secret", generated); plugin.saveConfig(); return generated;
+        plugin.getConfig().set("security.secret", generated);
+        plugin.saveConfig();
+        return generated;
     }
 
     public record Inspection(boolean claimed, boolean valid, boolean backed, boolean activeDefinition,
@@ -471,11 +578,23 @@ public final class MiraItemService {
         }
     }
 
+    private String effectOverlaySignature(String itemId, UUID issueId, UUID ownerId, String ownerName, String date) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String payload = "effects|" + itemId + "|" + issueId + "|" + ownerId + "|" + ownerName + "|" + date + "|" + secret;
+            return HexFormat.of().formatHex(digest.digest(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception error) {
+            throw new IllegalStateException("Unable to sign MiraItem effect overlay", error);
+        }
+    }
+
     private String signature(String itemId, UUID issueId, UUID ownerId, String ownerName, String date) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             String payload = itemId + "|" + issueId + "|" + ownerId + "|" + ownerName + "|" + date + "|" + secret;
             return HexFormat.of().formatHex(digest.digest(payload.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception error) { throw new IllegalStateException("Unable to sign MiraItem", error); }
+        } catch (Exception error) {
+            throw new IllegalStateException("Unable to sign MiraItem", error);
+        }
     }
 }
