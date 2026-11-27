@@ -108,7 +108,7 @@ public final class SpecialItemListener implements Listener {
         }
 
         int duration = plugin.getConfig().getInt("mechanics.empower-duration-ticks", 600);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 1, false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, duration, 1, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, 1, false, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, 1, false, true, true));
 
@@ -142,7 +142,7 @@ public final class SpecialItemListener implements Listener {
 
             if (definition.ability(MiraAbility.LOCHABER) && state.enabled(definition.id())) {
                 int duration = plugin.getConfig().getInt("mechanics.lochaber-fatigue-duration-ticks", 60);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.MINING_FATIGUE, duration, 0, false, false, true));
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, duration, 0, false, false, true));
             }
 
             UUID issueId = items.issueId(held).orElse(null);
@@ -198,7 +198,7 @@ public final class SpecialItemListener implements Listener {
 
         int duration = plugin.getConfig().getInt("mechanics.excalibur-duration-ticks", 60);
         target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, duration, 0, false, true, true));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 0, false, true, true));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, duration, 0, false, true, true));
 
         long cooldownMillis = plugin.getConfig().getLong("mechanics.excalibur-cooldown-ticks", 600L) * 50L;
         core.cooldowns().start(issueId, EXCALIBUR_COOLDOWN, Duration.ofMillis(Math.max(1L, cooldownMillis)));
