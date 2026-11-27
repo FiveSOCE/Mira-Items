@@ -79,7 +79,7 @@ public final class MiraItemsPlugin extends JavaPlugin {
 
         core.modules().setHealth(this, ModuleHealth.HEALTHY,
                 "Custom item/ability registries, event windows, Core cooldowns, Dark Rider set bonuses + MythicArmors integration, verification tools and PAPI displays ready");
-        getLogger().info("MiraItems v" + getPluginMeta().getVersion() + " enabled.");
+        getLogger().info("MiraItems v" + getDescription().getVersion() + " enabled.");
     }
 
     public MiraCore core() { return core; }
