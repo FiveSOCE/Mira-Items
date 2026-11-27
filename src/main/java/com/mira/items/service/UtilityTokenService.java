@@ -44,7 +44,7 @@ public final class UtilityTokenService implements Listener {
         Objects.requireNonNull(type, "type");
         ItemStack item = new ItemStack(Material.PAPER, Math.max(1, Math.min(64, amount)));
         ItemMeta meta = item.getItemMeta();
-        meta.customName(Component.text(type == TokenType.REPAIR ? "Mira Repair Token" : "Mira Rename Token"));
+        meta.displayName(Component.text(type == TokenType.REPAIR ? "Mira Repair Token" : "Mira Rename Token"));
         meta.lore(type == TokenType.REPAIR
                 ? List.of(Component.text("Hold the item to repair in your offhand."),
                           Component.text("Right-click this token to fully repair it."))
