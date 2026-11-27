@@ -4,21 +4,35 @@ Scarce tracked-special-item and voucher system for the Mira Paper server suite.
 
 MiraItems issues uniquely signed custom weapons/items, enforces scarcity limits and integrity checks, provides permanent resource-pack model identities, and attaches custom combat/utility mechanics to authenticated issued copies.
 
-## Current Release
+## Versioned downloads
 
-**v0.1.28** — compatible with Paper/Minecraft **1.21.11 through 26.2** using Java 21 bytecode.
+| Paper server | Java | JAR filename | Download |
+| --- | --- | --- | --- |
+| **1.18.2** | 17 | `MiraItems_1.18.2.jar` | [Legacy release](https://github.com/FiveSOCE/Mira-Items/releases/tag/dev-1.18.2) |
+| **1.21.11–26.2** | 21 baseline; newer Paper may require Java 25 | `MiraItems_1.21.11-26.2.jar` | [Modern release](https://github.com/FiveSOCE/Mira-Items/releases/tag/compat-modern-1.21.11-26.2) |
 
-[View releases](https://github.com/FiveSOCE/Mira-Items/releases)
+Only use download links once the relevant CI build passes and the JAR appears in GitHub releases. **1.19–1.21.10 are not yet certified.** Item models and some equipment functionality depend on the Minecraft client's resource-pack format; no identical client-side visuals are promised across the full version range.
 
-## Requirements / Integrations
+[Legacy source](https://github.com/FiveSOCE/Mira-Items/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Items) · [All releases](https://github.com/FiveSOCE/Mira-Items/releases)
 
-- Paper 1.21.11 through 26.2
-- Java 21
-- MiraCore
-- MiraEnchantments optional/recommended so protected MiraItems reject Rune application
-- PlaceholderAPI optional
-- LuckPerms used by generated rank/permission voucher flows
-- optional integrations with MiraTags, MiraKits, MiraFly, MiraAirdrops, MiraPinata and related Mira modules
+## Dependencies and integrations
+
+- **Required:** Matching Paper and Java runtime, plus a matching **MiraCore** JAR.
+- **Optional:** MiraEnchantments to prevent protected items from receiving runes; PlaceholderAPI, LuckPerms for rank vouchers, EssentialsX, MiraKits, MiraTags, MiraAirdrops, MiraPinata and MythicArmors, where installed and version-compatible.
+- **Resource pack:** Model files are required for custom visual appearance. The legacy client needs `CustomModelData` overrides, whereas modern item-model components need modern pack definitions.
+- Back up `plugins/MiraItems/` and remove the older JAR before installing a matching build.
+
+## Commands and permissions
+
+| Command | Permission | Purpose |
+| --- | --- | --- |
+| `/mi <player> <item-or-reward>` | `miraitems.admin` | Give custom signed weapons or vouchers |
+| `/mi applyitem <item>` | `miraitems.admin` | Apply authenticated mechanics to held item without replacing its appearance |
+| `/mitem`, `/miraitem`, `/miraitems` | `miraitems.admin` | Command aliases |
+
+| Permission | Default | Purpose |
+| --- | --- | --- |
+| `miraitems.admin` | OP | Signed item issuance, ability administration and diagnostics |
 
 ## Signed Item Identity
 
