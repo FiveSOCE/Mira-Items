@@ -1,7 +1,7 @@
 name: MiraItems
-version: 0.1.28
+version: 0.1.28-1.18.2
 main: com.mira.items.MiraItemsPlugin
-api-version: '1.21'
+api-version: '1.18'
 authors: [FiveS]
 description: Tracked custom items with registry API, event expiry, dynamic lore and ability cooldown feedback.
 depend: [MiraCore]
