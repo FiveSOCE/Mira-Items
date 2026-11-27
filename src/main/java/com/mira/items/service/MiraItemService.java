@@ -7,14 +7,11 @@ import com.mira.items.model.MiraItemDefinitions;
 import com.mira.items.store.ItemStateStore;
 import com.mira.items.util.Text;
 import net.kyori.adventure.text.Component;
-import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.MusicInstrumentMeta;
-import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -91,10 +88,7 @@ public final class MiraItemService {
             meta.lore(expectedLore(definition, record.ownerName(), record.date()));
             definition.enchants().forEach((enchantment, level) -> meta.addEnchant(enchantment, level, true));
             applyCanonicalVisuals(meta, definition);
-            if (definition.ability(MiraAbility.EMPOWER)) {
-                if (!(meta instanceof MusicInstrumentMeta instrumentMeta)) throw new IllegalStateException("GOAT_HORN did not expose MusicInstrumentMeta");
-                instrumentMeta.setInstrument(MusicInstrument.YEARN_GOAT_HORN);
-            }
+            // 1.18.2 uses BELL as the Empower carrier. Goat horns did not exist yet.
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             pdc.set(itemIdKey, PersistentDataType.STRING, definition.id());
             pdc.set(issueIdKey, PersistentDataType.STRING, record.issueId().toString());
@@ -238,8 +232,7 @@ public final class MiraItemService {
                     && meta.lore() != null && meta.lore().equals(expectedLore(definition, ownerName, date));
         }
         if (valid && !overlay && definition.ability(MiraAbility.EMPOWER)) {
-            valid = meta instanceof MusicInstrumentMeta instrumentMeta
-                    && MusicInstrument.YEARN_GOAT_HORN.equals(instrumentMeta.getInstrument());
+            valid = item.getType() == definition.material();
         }
         if (valid && !overlay) {
             valid = pdc.getKeys().stream().noneMatch(key ->
@@ -253,27 +246,11 @@ public final class MiraItemService {
         // Canonical issued MiraItems own their resource-pack visuals. Effect overlays explicitly do not:
         // they preserve whatever model/material/name/lore the held item already had.
         if (!overlay) {
-            boolean visualChanged = false;
-            NamespacedKey expectedModel = modelKey(definition);
-            if (expectedModel != null && !expectedModel.equals(meta.getItemModel())) {
-                meta.setItemModel(expectedModel);
-                visualChanged = true;
+            int expectedModel = legacyModelData(definition);
+            if (expectedModel > 0 && (!meta.hasCustomModelData() || meta.getCustomModelData() != expectedModel)) {
+                meta.setCustomModelData(expectedModel);
+                item.setItemMeta(meta);
             }
-            NamespacedKey expectedEquipment = equipmentModelKey(definition);
-            EquipmentSlot expectedSlot = armorSlot(definition.id());
-            if (expectedEquipment != null && expectedSlot != null) {
-                EquippableComponent equippable = meta.getEquippable();
-                if (!expectedEquipment.equals(equippable.getModel())
-                        || expectedSlot != equippable.getSlot()
-                        || !equippable.isSwappable()
-                        || !equippable.isDispensable()
-                        || !equippable.isDamageOnHurt()) {
-                    configureDarkRiderEquippable(equippable, expectedEquipment, expectedSlot);
-                    meta.setEquippable(equippable);
-                    visualChanged = true;
-                }
-            }
-            if (visualChanged) item.setItemMeta(meta);
         }
         return Optional.of(definition);
     }
@@ -435,15 +412,10 @@ public final class MiraItemService {
             return;
         }
 
-        NamespacedKey itemModel = meta.getItemModel();
-        if (itemModel != null && (itemModel.getNamespace().equals("mira") || itemModel.getNamespace().equals("mythicarmor"))) {
-            meta.setItemModel(null);
-        }
-        EquipmentSlot vanillaSlot = armorSlot(backedItemId);
-        if (vanillaSlot != null) {
-            EquippableComponent equippable = meta.getEquippable();
-            configureDarkRiderEquippable(equippable, VANILLA_NETHERITE_EQUIPMENT_MODEL, vanillaSlot);
-            meta.setEquippable(equippable);
+        MiraItemDefinition original = MiraItemDefinitions.byId(backedItemId).orElse(null);
+        int ownedModel = original == null ? -1 : legacyModelData(original);
+        if (ownedModel > 0 && meta.hasCustomModelData() && meta.getCustomModelData() == ownedModel) {
+            meta.setCustomModelData(null);
         }
         item.setItemMeta(meta);
     }
@@ -499,24 +471,14 @@ public final class MiraItemService {
     }
 
     private void applyCanonicalVisuals(ItemMeta meta, MiraItemDefinition definition) {
-        NamespacedKey model = modelKey(definition);
-        if (model != null) meta.setItemModel(model);
-
-        NamespacedKey equipment = equipmentModelKey(definition);
-        EquipmentSlot slot = armorSlot(definition.id());
-        if (equipment != null && slot != null) {
-            EquippableComponent equippable = meta.getEquippable();
-            configureDarkRiderEquippable(equippable, equipment, slot);
-            meta.setEquippable(equippable);
-        }
+        int model = legacyModelData(definition);
+        if (model > 0) meta.setCustomModelData(model);
     }
 
-    private static void configureDarkRiderEquippable(EquippableComponent equippable, NamespacedKey model, EquipmentSlot slot) {
-        equippable.setModel(model);
-        equippable.setSlot(slot);
-        equippable.setSwappable(true);
-        equippable.setDispensable(true);
-        equippable.setDamageOnHurt(true);
+    /** Legacy resource packs use numeric CustomModelData instead of item_model and equippable components. */
+    private int legacyModelData(MiraItemDefinition definition) {
+        NamespacedKey key = modelKey(definition);
+        return key == null ? -1 : 100000 + Math.floorMod(key.toString().hashCode(), 900000);
     }
 
     private static EquipmentSlot armorSlot(String itemId) {
