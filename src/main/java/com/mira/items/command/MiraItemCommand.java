@@ -363,7 +363,7 @@ public final class MiraItemCommand implements CommandExecutor, TabCompleter {
     }
 
     private void status(CommandSender sender) {
-        send(sender, "&dMiraItems v" + plugin.getPluginMeta().getVersion());
+        send(sender, "&dMiraItems v" + plugin.getDescription().getVersion());
         for (MiraItemDefinition definition : MiraItemDefinitions.all()) {
             int limit = state.limit(definition.id());
             send(sender, "&7- " + definition.id() + ": " + (state.enabled(definition.id()) ? "&aENABLED" : "&cDISABLED")
