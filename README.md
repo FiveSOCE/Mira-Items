@@ -4,14 +4,14 @@ Scarce tracked-special-item and voucher system for the Mira Paper server suite.
 
 MiraItems issues uniquely signed custom weapons/items, enforces scarcity limits and integrity checks, provides permanent resource-pack model identities, and attaches custom combat/utility mechanics to authenticated issued copies.
 
-## Versioned downloads
+## Downloads and compatibility
 
-| Paper server | Java | JAR filename | Download |
+| Server target | Java | Final JAR name | Download |
 | --- | --- | --- | --- |
-| **1.18.2** | 17 | `MiraItems_1.18.2.jar` | [Download legacy JAR](https://github.com/FiveSOCE/Mira-Items/releases/download/dev-1.18.2/MiraItems_1.18.2.jar) |
-| **1.21.11–26.2** | 21 baseline; newer Paper may require Java 25 | `MiraItems_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Items/releases/download/compat-modern-1.21.11-26.2/MiraItems_1.21.11-26.2.jar) |
+| **Paper 1.18.2** | 17 | `MiraItems_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Items/releases/download/dev-1.18.2/MiraItems_1.18.2.jar) |
+| **Paper 1.21.11–26.2** | Java 21 baseline; Paper 26.2 may require Java 25 | `MiraItems_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Items/releases/download/compat-modern-1.21.11-26.2/MiraItems_1.21.11-26.2.jar) |
 
-Both named JARs are published release assets after passing their respective GitHub CI compilation checks. **1.19–1.21.10 are not yet certified.** Item models and some equipment functionality depend on the Minecraft client's resource-pack format; no identical client-side visuals are promised across the full version range.
+Install only one versioned JAR. Release assets are published; complete in-game compatibility is not implied by compilation.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Items/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Items) · [All releases](https://github.com/FiveSOCE/Mira-Items/releases)
 
@@ -205,10 +205,3 @@ Player-context placeholders include:
 %miraitems_held_event_remaining%
 ```
 
-## Building
-
-```bash
-gradle clean build
-```
-
-The output JAR is created in `build/libs/`.
