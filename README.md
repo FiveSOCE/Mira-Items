@@ -11,11 +11,13 @@ MiraItems issues uniquely signed custom weapons/items, enforces scarcity limits 
 | **Paper 1.18.2** | 17 | `MiraItems_1.18.2.jar` | [Download 1.18.2 JAR](https://github.com/FiveSOCE/Mira-Items/releases/download/dev-1.18.2/MiraItems_1.18.2.jar) |
 | **Paper 1.21.11–26.2** | Java 21 baseline; Paper 26.2 may require Java 25 | `MiraItems_1.21.11-26.2.jar` | [Download modern JAR](https://github.com/FiveSOCE/Mira-Items/releases/download/compat-modern-1.21.11-26.2/MiraItems_1.21.11-26.2.jar) |
 
-Install only one versioned JAR. Release assets are published; complete in-game compatibility is not implied by compilation.
+**Build status:** Version-specific direct links are provided where published. A GitHub Actions or Releases link means the corresponding versioned JAR has not been verified. Compilation alone does not establish in-game compatibility; intermediate versions 1.19–1.21.10 remain unverified unless specifically documented.
+
+**Installation:** Back up plugin data, remove older JAR copies and install only the build matching your server. Never install both builds together.
 
 [Legacy source](https://github.com/FiveSOCE/Mira-Items/tree/compat/1.18.2) · [Modern source](https://github.com/FiveSOCE/Mira-Items) · [All releases](https://github.com/FiveSOCE/Mira-Items/releases)
 
-## Dependencies and integrations
+## Dependencies and installation
 
 - **Required:** Matching Paper and Java runtime, plus a matching **MiraCore** JAR.
 - **Optional:** MiraEnchantments to prevent protected items from receiving runes; PlaceholderAPI, LuckPerms for rank vouchers, EssentialsX, MiraKits, MiraTags, MiraAirdrops, MiraPinata and MythicArmors, where installed and version-compatible.
@@ -204,4 +206,3 @@ Player-context placeholders include:
 %miraitems_held_event%
 %miraitems_held_event_remaining%
 ```
-
